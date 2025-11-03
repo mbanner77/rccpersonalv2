@@ -27,12 +27,6 @@ services:
       - key: MANAGER_EMAILS
         value: "manager1@example.com,manager2@example.com"
 
-      - key: WEB_URL
-        fromService:
-          name: employee-anniversaries-web
-          type: web
-          property: url
-
   - type: cron
     name: employee-anniversaries-daily-cron
     schedule: "0 8 * * *" # daily at 08:00
@@ -41,13 +35,13 @@ services:
     region: frankfurt
     image:
       url: curlimages/curl:8.6.0
-    startCommand: bash -lc "curl -sSf \"$WEB_URL/api/schedule/run-daily\" || true"
+    startCommand: bash -lc "curl -sSf \"https://$WEB_HOST/api/schedule/run-daily\" || true"
     envVars:
-      - key: WEB_URL
+      - key: WEB_HOST
         fromService:
           name: employee-anniversaries-web
           type: web
-          property: url
+          property: host
 
 databases:
   - name: employee-anniversaries-db
