@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: employee-anniversaries-web
+    runtime: node
+    plan: starter
+    region: frankfurt
+    buildCommand: npm ci && npx prisma migrate deploy && npx prisma generate && npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: employee-anniversaries-db
+          property: connectionString
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: MANAGER_EMAILS
+        value: "manager1@example.com,manager2@example.com"
+
+      - key: WEB_URL
+        fromService:
+          name: employee-anniversaries-web
+          type: web
+          property: url
+
+databases:
+  - name: employee-anniversaries-db
+    plan: starter
+    region: frankfurt

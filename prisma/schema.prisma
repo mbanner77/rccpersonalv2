@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id            String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  startDate     DateTime
+  birthDate     DateTime
+  email         String?  @unique
+  lockAll       Boolean  @default(false)
+  lockFirstName Boolean  @default(false)
+  lockLastName  Boolean  @default(false)
+  lockStartDate Boolean  @default(false)
+  lockBirthDate Boolean  @default(false)
+  lockEmail     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@unique([firstName, lastName, birthDate])
+}
+
+model Setting {
+  id                     Int      @id @default(1)
+  managerEmails          String   @default("")
+  birthdayEmailTemplate  String   @default("Happy Birthday, {{firstName}}!")
+  jubileeEmailTemplate   String   @default("Congrats on {{years}} years, {{firstName}}!")
+  jubileeYearsCsv        String   @default("5,10,15,20,25,30,35,40")
+}
