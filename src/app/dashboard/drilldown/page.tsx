@@ -12,10 +12,15 @@ type SearchParams = {
 };
 
 export default async function DrilldownPage({ searchParams }: { searchParams: SearchParams }) {
-  const kind = (searchParams.kind ?? "").toString();
-  const year = Number(searchParams.year ?? new Date().getFullYear());
-  const month = searchParams.month !== undefined ? Number(searchParams.month) : null;
-  const quarter = searchParams.quarter !== undefined ? Number(searchParams.quarter) : null;
+  const rawKind = (searchParams.kind ?? "").toString().toLowerCase();
+  const allowedKinds = ["birthdays", "hires", "jubilees"] as const;
+  type Kind = typeof allowedKinds[number];
+  const kind: Kind = allowedKinds.includes(rawKind as Kind) ? (rawKind as Kind) : "birthdays";
+  const year = Number(searchParams.year ?? new Date().getFullYear()) || new Date().getFullYear();
+  const m = searchParams.month !== undefined ? Math.max(0, Math.min(11, Number(searchParams.month))) : null;
+  const q = searchParams.quarter !== undefined ? Math.max(0, Math.min(3, Number(searchParams.quarter))) : null;
+  const month = Number.isFinite(m as number) ? (m as number) : null;
+  const quarter = Number.isFinite(q as number) ? (q as number) : null;
 
   const employees = await db.employee.findMany({ orderBy: { lastName: "asc" } });
 
@@ -50,7 +55,7 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
   const exportHref = `/api/export/dashboard?kind=${encodeURIComponent(kind)}&year=${year}` +
     (month !== null ? `&month=${month}` : "") + (quarter !== null ? `&quarter=${quarter}` : "");
 
-  const titleKind = kind === "birthdays" ? "Geburtstage" : kind === "hires" ? "Eintritte" : kind === "jubilees" ? "Jubiläen" : "Details";
+  const titleKind = kind === "birthdays" ? "Geburtstage" : kind === "hires" ? "Eintritte" : "Jubiläen";
 
   return (
     <div className="p-8 space-y-4">
@@ -60,6 +65,12 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
           <a href={exportHref} className="rounded border px-3 py-1">CSV Export</a>
           <Link href={backHref} className="rounded border px-3 py-1">Zurück</Link>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="rounded-full border px-2 py-0.5">Typ: {titleKind}</span>
+        <span className="rounded-full border px-2 py-0.5">Jahr: {year}</span>
+        {month !== null && <span className="rounded-full border px-2 py-0.5">Monat: {month + 1}</span>}
+        {quarter !== null && <span className="rounded-full border px-2 py-0.5">Quartal: {quarter + 1}</span>}
       </div>
       <DrilldownClient initialRows={rows} />
     </div>

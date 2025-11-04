@@ -144,9 +144,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
 
       <h2 className="text-xl font-medium">Auswertungen {currYear}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Chart data={birthdaysPerMonth} title="Geburtstage pro Monat" kind="birthdays" />
-        <Chart data={jubileesPerMonth} title="Jubiläen pro Monat" kind="jubilees" />
-        <Chart data={hiresPerMonth} title="Eintritte pro Monat" kind="hires" />
+        <div className="space-y-2">
+          <Chart data={birthdaysPerMonth} title="Geburtstage pro Monat" kind="birthdays" />
+          <div>
+            <a className="text-sm underline" href={`/dashboard/drilldown?kind=birthdays&year=${currYear}`}>Alle Details</a>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Chart data={jubileesPerMonth} title="Jubiläen pro Monat" kind="jubilees" />
+          <div>
+            <a className="text-sm underline" href={`/dashboard/drilldown?kind=jubilees&year=${currYear}`}>Alle Details</a>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Chart data={hiresPerMonth} title="Eintritte pro Monat" kind="hires" />
+          <div>
+            <a className="text-sm underline" href={`/dashboard/drilldown?kind=hires&year=${currYear}`}>Alle Details</a>
+          </div>
+        </div>
       </div>
 
       <h2 className="text-xl font-medium">Geburtstage nach Quartal {currYear}</h2>
