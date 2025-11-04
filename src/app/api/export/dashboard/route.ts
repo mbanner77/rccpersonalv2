@@ -1,4 +1,5 @@
 import { db } from "@/lib/prisma";
+import { parseJubileeYears } from "@/lib/jubilee";
 
 function qParam(url: URL, key: string): string | null {
   const v = url.searchParams.get(key);
@@ -22,7 +23,11 @@ export async function GET(req: Request) {
     return new Response("Invalid parameters", { status: 400 });
   }
 
-  const employees = await db.employee.findMany({ orderBy: { lastName: "asc" } });
+  const [settings, employees] = await Promise.all([
+    db.setting.findUnique({ where: { id: 1 } }),
+    db.employee.findMany({ orderBy: { lastName: "asc" } }),
+  ]);
+  const yearsCfg = parseJubileeYears(settings);
 
   const rows: { firstName: string; lastName: string; email: string; date: string; type: string }[] = [];
 
@@ -44,11 +49,13 @@ export async function GET(req: Request) {
     } else if (kind === "jubilees") {
       const s = new Date(e.startDate);
       const m = s.getMonth();
-      const anniv = new Date(year, m, s.getDate());
-      // we export all anniversaries in the selected month/quarter, independent of specific years-setting
+      const yrs = year - s.getFullYear();
       if (month !== null && m !== month) continue;
       if (quarter !== null && Math.floor(m / 3) !== quarter) continue;
-      rows.push({ firstName: e.firstName, lastName: e.lastName, email: e.email ?? "", date: fmt(anniv), type: "jubilee" });
+      if (yrs > 0 && yearsCfg.includes(yrs)) {
+        const anniv = new Date(year, m, s.getDate());
+        rows.push({ firstName: e.firstName, lastName: e.lastName, email: e.email ?? "", date: fmt(anniv), type: "jubilee" });
+      }
     }
   }
 

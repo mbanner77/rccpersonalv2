@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/prisma";
 import DrilldownClient from "./DrilldownClient";
+import { parseJubileeYears } from "@/lib/jubilee";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,11 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
   const month = Number.isFinite(m as number) ? (m as number) : null;
   const quarter = Number.isFinite(q as number) ? (q as number) : null;
 
-  const employees = await db.employee.findMany({ orderBy: { lastName: "asc" } });
+  const [setting, employees] = await Promise.all([
+    db.setting.findUnique({ where: { id: 1 } }),
+    db.employee.findMany({ orderBy: { lastName: "asc" } }),
+  ]);
+  const years = parseJubileeYears(setting);
 
   const rows = employees.flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date }) => {
     const out: { id: string; name: string; email: string; date: string }[] = [];
@@ -44,7 +49,10 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
       const m = s.getMonth();
       if (month !== null && m !== month) return out;
       if (quarter !== null && Math.floor(m / 3) !== quarter) return out;
-      out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: new Date(year, m, s.getDate()).toISOString() });
+      const yrs = year - s.getFullYear();
+      if (yrs > 0 && years.includes(yrs)) {
+        out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: new Date(year, m, s.getDate()).toISOString() });
+      }
     }
     return out;
   });
