@@ -2,6 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+type Unit = {
+  id: string;
+  name: string;
+  leader: string | null;
+  deputy: string | null;
+  _count?: { employees: number };
+};
+
 type EmployeeRow = {
   id: string;
   firstName: string;
@@ -15,6 +23,8 @@ type EmployeeRow = {
   lockStartDate: boolean;
   lockBirthDate: boolean;
   lockEmail: boolean;
+  unitId: string | null;
+  unit?: Unit | null;
 };
 
 export default function EmployeesPage() {
@@ -24,6 +34,9 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [unitsLoading, setUnitsLoading] = useState(false);
+  const [unitDialogOpen, setUnitDialogOpen] = useState(false);
   const pageSize = 10;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -59,9 +72,24 @@ export default function EmployeesPage() {
     try {
       const res = await fetch("/api/employees");
       const data = await res.json();
-      setItems(data as EmployeeRow[]);
+      const mapped = (data as EmployeeRow[]).map((row) => ({
+        ...row,
+        unitId: (row.unitId ?? row.unit?.id ?? null) as string | null,
+      }));
+      setItems(mapped);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadUnits() {
+    setUnitsLoading(true);
+    try {
+      const res = await fetch("/api/units");
+      const data = await res.json();
+      setUnits(data as Unit[]);
+    } finally {
+      setUnitsLoading(false);
     }
   }
 
@@ -88,6 +116,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     void load();
+    void loadUnits();
   }, []);
 
   const filtered = useMemo(() => {
@@ -123,6 +152,7 @@ export default function EmployeesPage() {
         <a href="/api/template" className="rounded border px-3 py-1">Excel-Vorlage laden</a>
         <a href="/api/employees/export.csv" className="rounded border px-3 py-1">Export CSV</a>
         <a href="/api/employees/export.xlsx" className="rounded border px-3 py-1">Export XLSX</a>
+        <button onClick={() => setUnitDialogOpen(true)} className="rounded border px-3 py-1">Units verwalten</button>
         <input
           value={query}
           onChange={(e) => { setQuery(e.target.value); setPage(1); }}
@@ -130,6 +160,7 @@ export default function EmployeesPage() {
           className="border rounded p-2 flex-1 min-w-[220px]"
         />
         {loading && <span className="text-sm text-zinc-600">Lade…</span>}
+        {unitsLoading && <span className="text-sm text-zinc-600">Units werden geladen…</span>}
       </div>
       {status && <p className="text-sm text-zinc-700">{status}</p>}
 
@@ -143,6 +174,7 @@ export default function EmployeesPage() {
                 <th className="p-2">Email</th>
                 <th className="p-2">Eintritt</th>
                 <th className="p-2">Geburtstag</th>
+                <th className="p-2">Unit</th>
                 <th className="p-2">Locks</th>
                 <th className="p-2">Aktion</th>
               </tr>
@@ -164,6 +196,25 @@ export default function EmployeesPage() {
                   </td>
                   <td className="p-2">
                     <input type="date" className="border rounded p-1" value={it.birthDate ? String(it.birthDate).slice(0,10) : ""} onChange={(e) => onFieldChange(it.id, "birthDate", e.target.value)} />
+                  </td>
+                  <td className="p-2">
+                    <select
+                      className="border rounded p-1 w-full"
+                      value={it.unitId ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value || null;
+                        onFieldChange(it.id, "unitId", val);
+                        const found = units.find((u) => u.id === val);
+                        onFieldChange(it.id, "unit", found ?? null);
+                      }}
+                    >
+                      <option value="">– Keine –</option>
+                      {units.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </select>
+                    {it.unit?.leader && <div className="text-xs text-zinc-500">Leitung: {it.unit.leader}</div>}
+                    {it.unit?.deputy && <div className="text-xs text-zinc-500">Stellv.: {it.unit.deputy}</div>}
                   </td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1 text-xs">
@@ -194,6 +245,173 @@ export default function EmployeesPage() {
           </div>
         </div>
       )}
+
+      {unitDialogOpen && (
+        <UnitDialog
+          units={units}
+          onClose={() => setUnitDialogOpen(false)}
+          onRefresh={async () => {
+            await loadUnits();
+            await load();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () => void; onRefresh: () => Promise<void> }) {
+  const [localUnits, setLocalUnits] = useState<Unit[]>(units);
+  const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newUnit, setNewUnit] = useState({ name: "", leader: "", deputy: "" });
+  const [error, setError] = useState<string>("");
+
+  function updateLocal(id: string, patch: Partial<Unit>) {
+    setLocalUnits((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
+  }
+
+  async function saveUnit(unit: Unit) {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/units", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: unit.id,
+          name: unit.name,
+          leader: unit.leader,
+          deputy: unit.deputy,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || res.statusText);
+      }
+      await onRefresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Fehler beim Speichern";
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteUnit(id: string) {
+    if (!confirm("Unit wirklich löschen? Zugeordnete Mitarbeiter werden auf 'Keine' gesetzt.")) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/units", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || res.statusText);
+      }
+      await onRefresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Fehler beim Löschen";
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function createUnit() {
+    const payload = {
+      name: newUnit.name.trim(),
+      leader: newUnit.leader.trim() || null,
+      deputy: newUnit.deputy.trim() || null,
+    };
+    if (!payload.name) {
+      setError("Name darf nicht leer sein");
+      return;
+    }
+    setCreating(true);
+    setError("");
+    try {
+      const res = await fetch("/api/units", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || res.statusText);
+      }
+      setNewUnit({ name: "", leader: "", deputy: "" });
+      await onRefresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Fehler beim Anlegen";
+      setError(msg);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-zinc-950 border rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] overflow-hidden">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h3 className="text-lg font-semibold">Units verwalten</h3>
+          <button onClick={onClose} className="text-sm text-zinc-600 hover:text-zinc-900">Schließen</button>
+        </div>
+        <div className="p-4 space-y-4 overflow-y-auto">
+          {error && <div className="text-sm text-red-600">{error}</div>}
+
+          <div className="space-y-3">
+            {localUnits.length === 0 && <p className="text-sm text-zinc-600">Noch keine Units angelegt.</p>}
+            {localUnits.map((unit) => (
+              <div key={unit.id} className="border rounded p-3 space-y-2 bg-zinc-50 dark:bg-zinc-900">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <label className="text-xs text-zinc-500">Name
+                    <input
+                      className="border rounded p-2 w-full"
+                      value={unit.name}
+                      onChange={(e) => updateLocal(unit.id, { name: e.target.value })}
+                    />
+                  </label>
+                  <label className="text-xs text-zinc-500">Leitung
+                    <input
+                      className="border rounded p-2 w-full"
+                      value={unit.leader ?? ""}
+                      onChange={(e) => updateLocal(unit.id, { leader: e.target.value })}
+                    />
+                  </label>
+                  <label className="text-xs text-zinc-500">Stellvertretung
+                    <input
+                      className="border rounded p-2 w-full"
+                      value={unit.deputy ?? ""}
+                      onChange={(e) => updateLocal(unit.id, { deputy: e.target.value })}
+                    />
+                  </label>
+                </div>
+                <div className="flex items-center justify-between text-xs text-zinc-500">
+                  <span>Mitarbeiter: {unit._count?.employees ?? "–"}</span>
+                  <div className="flex gap-2 text-sm">
+                    <button onClick={() => saveUnit(unit)} className="border rounded px-3 py-1" disabled={saving}>Speichern</button>
+                    <button onClick={() => deleteUnit(unit.id)} className="border rounded px-3 py-1 text-red-600" disabled={saving}>Löschen</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border rounded p-3 bg-zinc-50 dark:bg-zinc-900 space-y-2">
+            <h4 className="font-medium text-sm">Neue Unit anlegen</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <input className="border rounded p-2" placeholder="Name" value={newUnit.name} onChange={(e) => setNewUnit((prev) => ({ ...prev, name: e.target.value }))} />
+              <input className="border rounded p-2" placeholder="Leitung" value={newUnit.leader} onChange={(e) => setNewUnit((prev) => ({ ...prev, leader: e.target.value }))} />
+              <input className="border rounded p-2" placeholder="Stellvertretung" value={newUnit.deputy} onChange={(e) => setNewUnit((prev) => ({ ...prev, deputy: e.target.value }))} />
+            </div>
+            <button onClick={createUnit} className="border rounded px-3 py-1" disabled={creating}>Anlegen</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

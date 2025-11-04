@@ -14,6 +14,8 @@ model Employee {
   startDate     DateTime
   birthDate     DateTime
   email         String?  @unique
+  unit          Unit?    @relation(fields: [unitId], references: [id])
+  unitId        String?
   lockAll       Boolean  @default(false)
   lockFirstName Boolean  @default(false)
   lockLastName  Boolean  @default(false)
@@ -23,6 +25,18 @@ model Employee {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   @@unique([firstName, lastName, birthDate])
+}
+
+model Unit {
+  id         String     @id @default(cuid())
+  name       String
+  leader     String?
+  deputy     String?
+  employees  Employee[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([name])
 }
 
 model Setting {

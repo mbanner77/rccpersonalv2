@@ -1,7 +1,7 @@
 import { db } from "@/lib/prisma";
 
 export async function GET() {
-  const items = await db.employee.findMany({ orderBy: { lastName: "asc" } });
+  const items = await db.employee.findMany({ orderBy: { lastName: "asc" }, include: { unit: true } });
   return Response.json(items);
 }
 
@@ -22,6 +22,7 @@ export async function PATCH(req: Request) {
     lockStartDate: boolean;
     lockBirthDate: boolean;
     lockEmail: boolean;
+    unitId: string | null;
   };
   const data: Partial<Updatable> = {};
   if (Object.prototype.hasOwnProperty.call(body, "firstName")) data.firstName = String(body.firstName);
@@ -35,6 +36,10 @@ export async function PATCH(req: Request) {
   if (Object.prototype.hasOwnProperty.call(body, "lockStartDate")) data.lockStartDate = Boolean(body.lockStartDate);
   if (Object.prototype.hasOwnProperty.call(body, "lockBirthDate")) data.lockBirthDate = Boolean(body.lockBirthDate);
   if (Object.prototype.hasOwnProperty.call(body, "lockEmail")) data.lockEmail = Boolean(body.lockEmail);
+  if (Object.prototype.hasOwnProperty.call(body, "unitId")) {
+    const incoming = body.unitId;
+    data.unitId = incoming === null || incoming === "" ? null : String(incoming);
+  }
 
   // parse date strings if provided
   if (typeof data.startDate === "string") data.startDate = new Date(data.startDate);
@@ -65,6 +70,6 @@ export async function PATCH(req: Request) {
     if (fn && ln) data.email = `${fn}.${ln}@realcore.de`;
   }
 
-  const updated = await db.employee.update({ where: { id }, data });
+  const updated = await db.employee.update({ where: { id }, data, include: { unit: true } });
   return Response.json(updated);
 }

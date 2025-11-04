@@ -9,7 +9,7 @@ interface Message {
 
 const suggestions = [
   "Wie viele Jubiläen stehen im nächsten Monat an?",
-  "Welche Teams haben die meisten Geburtstage im kommenden Quartal?",
+  "Welche Units haben die meisten Geburtstage im kommenden Quartal?",
   "Gib mir einen kurzen Überblick über Eintritte und Jubiläen dieses Jahres.",
 ];
 

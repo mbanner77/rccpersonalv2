@@ -11,6 +11,7 @@ export type EmployeeLike = {
   lockStartDate: boolean;
   lockBirthDate: boolean;
   lockEmail: boolean;
+  unit?: { name?: string | null } | null;
 };
 
 export type SettingLike = { jubileeYearsCsv: string } | null | undefined;

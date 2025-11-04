@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type Row = { id: string; name: string; email: string; date: string; extra?: string };
+type Row = { id: string; name: string; email: string; date: string; extra?: string; unitName?: string | null };
 
 const monthLabels = ["Jan","Feb","Mrz","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
 
@@ -52,6 +52,7 @@ export default function DrilldownClient({ initialRows, initialMonth = null, extr
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr>
               <th className="text-left p-2 border">Name</th>
+              <th className="text-left p-2 border">Unit</th>
               <th className="text-left p-2 border">E-Mail</th>
               {extraLabel && <th className="text-left p-2 border">{extraLabel}</th>}
               <th className="text-left p-2 border">{dateLabel}</th>
@@ -61,6 +62,7 @@ export default function DrilldownClient({ initialRows, initialMonth = null, extr
             {pageRows.map((r) => (
               <tr key={r.id} className="odd:bg-white even:bg-zinc-50 dark:odd:bg-zinc-900 dark:even:bg-zinc-800">
                 <td className="p-2 border">{r.name}</td>
+                <td className="p-2 border">{r.unitName ?? "–"}</td>
                 <td className="p-2 border">{r.email}</td>
                 {extraLabel && <td className="p-2 border">{r.extra ?? ""}</td>}
                 <td className="p-2 border">{new Date(r.date).toLocaleDateString()}</td>

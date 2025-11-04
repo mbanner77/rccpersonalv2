@@ -24,45 +24,47 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
 
   const [setting, employees] = await Promise.all([
     db.setting.findUnique({ where: { id: 1 } }),
-    db.employee.findMany({ orderBy: { lastName: "asc" } }),
+    db.employee.findMany({ orderBy: { lastName: "asc" }, include: { unit: true } }),
   ]);
   const years = parseJubileeYears(setting);
 
-  const birthdaysRows = employees.flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date }) => {
-    const out: { id: string; name: string; email: string; date: string; extra?: string }[] = [];
+  type Row = { id: string; name: string; email: string; date: string; extra?: string; unitName?: string | null };
+
+  const birthdaysRows = employees.flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date; unit?: { name?: string | null } | null }) => {
+    const out: Row[] = [];
     const b = new Date(e.birthDate);
     const m = b.getMonth();
     if (month !== null && m !== month) return out;
     if (quarter !== null && Math.floor(m / 3) !== quarter) return out;
-    out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: new Date(year, m, b.getDate()).toISOString() });
+    out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: new Date(year, m, b.getDate()).toISOString(), unitName: e.unit?.name ?? null });
     return out;
-  }).sort((a: { date: string; name: string }, b: { date: string; name: string }) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.name.localeCompare(b.name));
+  }).sort((a: Row, b: Row) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.name.localeCompare(b.name));
 
-  const hiresRows = employees.flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date }) => {
-    const out: { id: string; name: string; email: string; date: string; extra?: string }[] = [];
+  const hiresRows = employees.flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date; unit?: { name?: string | null } | null }) => {
+    const out: Row[] = [];
     const s = new Date(e.startDate);
     if (s.getFullYear() !== year) return out;
     const m = s.getMonth();
     if (month !== null && m !== month) return out;
     if (quarter !== null && Math.floor(m / 3) !== quarter) return out;
-    out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: s.toISOString() });
+    out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: s.toISOString(), unitName: e.unit?.name ?? null });
     return out;
-  }).sort((a: { date: string; name: string }, b: { date: string; name: string }) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.name.localeCompare(b.name));
+  }).sort((a: Row, b: Row) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.name.localeCompare(b.name));
 
   const jubileesRows = employees
-    .flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date }) => {
-      const out: { id: string; name: string; email: string; date: string; extra?: string }[] = [];
+    .flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date; unit?: { name?: string | null } | null }) => {
+      const out: Row[] = [];
       const s = new Date(e.startDate);
       const m = s.getMonth();
       if (month !== null && m !== month) return out;
       if (quarter !== null && Math.floor(m / 3) !== quarter) return out;
       const yrs = year - s.getFullYear();
       if (yrs > 0 && years.includes(yrs)) {
-        out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: s.toISOString(), extra: `${yrs} Jahre` });
+        out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: s.toISOString(), extra: `${yrs} Jahre`, unitName: e.unit?.name ?? null });
       }
       return out;
     })
-    .sort((a: { date: string; name: string }, b: { date: string; name: string }) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.name.localeCompare(b.name));
+    .sort((a: Row, b: Row) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.name.localeCompare(b.name));
 
   return (
     <div className="p-8 space-y-4">
