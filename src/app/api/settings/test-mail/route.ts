@@ -1,6 +1,8 @@
 import { db } from "@/lib/prisma";
 import nodemailer from "nodemailer";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({} as { to?: string }));
@@ -14,7 +16,17 @@ export async function POST(req: Request) {
     const pass = s?.smtpPass || process.env.SMTP_PASS || "RealCore2025!";
     const from = s?.smtpFrom || process.env.SMTP_FROM || user;
 
-    const transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+    });
+
+    // Verify first to surface clear errors
+    await transporter.verify();
     await transporter.sendMail({ from, to, subject: "Testmail", html: "<p>Dies ist eine Testmail.</p>" });
 
     return Response.json({ ok: true });
