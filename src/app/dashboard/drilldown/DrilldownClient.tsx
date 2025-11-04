@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-type Row = { id: string; name: string; email: string; date: string };
+type Row = { id: string; name: string; email: string; date: string; extra?: string };
 
 const monthLabels = ["Jan","Feb","Mrz","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
 
-export default function DrilldownClient({ initialRows, initialMonth = null }: { initialRows: Row[]; initialMonth?: number | null }) {
+export default function DrilldownClient({ initialRows, initialMonth = null, extraLabel }: { initialRows: Row[]; initialMonth?: number | null; extraLabel?: string }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 20;
@@ -52,6 +52,7 @@ export default function DrilldownClient({ initialRows, initialMonth = null }: { 
             <tr>
               <th className="text-left p-2 border">Name</th>
               <th className="text-left p-2 border">E-Mail</th>
+              {extraLabel && <th className="text-left p-2 border">{extraLabel}</th>}
               <th className="text-left p-2 border">Datum</th>
             </tr>
           </thead>
@@ -60,6 +61,7 @@ export default function DrilldownClient({ initialRows, initialMonth = null }: { 
               <tr key={r.id} className="odd:bg-white even:bg-zinc-50 dark:odd:bg-zinc-900 dark:even:bg-zinc-800">
                 <td className="p-2 border">{r.name}</td>
                 <td className="p-2 border">{r.email}</td>
+                {extraLabel && <td className="p-2 border">{r.extra ?? ""}</td>}
                 <td className="p-2 border">{new Date(r.date).toLocaleDateString()}</td>
               </tr>
             ))}

@@ -29,7 +29,7 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
   const years = parseJubileeYears(setting);
 
   const rows = employees.flatMap((e: { id: string; firstName: string; lastName: string; email: string | null; startDate: Date; birthDate: Date }) => {
-    const out: { id: string; name: string; email: string; date: string }[] = [];
+    const out: { id: string; name: string; email: string; date: string; extra?: string }[] = [];
     if (kind === "birthdays") {
       const b = new Date(e.birthDate);
       const m = b.getMonth();
@@ -50,7 +50,7 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
       if (quarter !== null && Math.floor(m / 3) !== quarter) return out;
       const yrs = year - s.getFullYear();
       if (yrs > 0 && years.includes(yrs)) {
-        out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: new Date(year, m, s.getDate()).toISOString() });
+        out.push({ id: e.id, name: `${e.lastName}, ${e.firstName}`, email: e.email ?? "", date: new Date(year, m, s.getDate()).toISOString(), extra: `${yrs} Jahre` });
       }
     }
     return out;
@@ -62,7 +62,7 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
   const exportHref = `/api/export/dashboard?kind=${encodeURIComponent(kind)}&year=${year}` +
     (month !== null ? `&month=${month}` : "") + (quarter !== null ? `&quarter=${quarter}` : "");
 
-  const titleKind = kind === "birthdays" ? "Geburtstage" : kind === "hires" ? "Eintritte" : "Jubiläen";
+  const titleKind = kind === "birthdays" ? "Geburtstagen & Jubiläen" : kind === "hires" ? "Eintritte" : "Jubiläen";
 
   return (
     <div className="p-8 space-y-4">
@@ -80,7 +80,7 @@ export default async function DrilldownPage({ searchParams }: { searchParams: Se
         {quarter !== null && <span className="rounded-full border px-2 py-0.5">Quartal: {quarter + 1}</span>}
       </div>
       <KindSwitcher />
-      <DrilldownClient initialRows={rows} initialMonth={month} />
+      <DrilldownClient initialRows={rows} initialMonth={month} extraLabel={kind === "jubilees" ? "Jahre" : undefined} />
     </div>
   );
 }
