@@ -7,6 +7,14 @@ function defaultSettings() {
     birthdayEmailTemplate: "Happy Birthday, {{firstName}}!",
     jubileeEmailTemplate: "Congrats on {{years}} years, {{firstName}}!",
     jubileeYearsCsv: "5,10,15,20,25,30,35,40",
+    smtpHost: "",
+    smtpPort: 465,
+    smtpUser: "",
+    smtpPass: "",
+    smtpFrom: "",
+    sendOnBirthday: true,
+    sendOnJubilee: true,
+    dailySendHour: 8,
   };
 }
 
@@ -18,6 +26,14 @@ export async function GET() {
     birthdayEmailTemplate: found.birthdayEmailTemplate,
     jubileeEmailTemplate: found.jubileeEmailTemplate,
     jubileeYearsCsv: found.jubileeYearsCsv,
+    smtpHost: found.smtpHost,
+    smtpPort: found.smtpPort,
+    smtpUser: found.smtpUser,
+    smtpPass: found.smtpPass,
+    smtpFrom: found.smtpFrom,
+    sendOnBirthday: found.sendOnBirthday,
+    sendOnJubilee: found.sendOnJubilee,
+    dailySendHour: found.dailySendHour,
   });
 }
 
@@ -32,6 +48,14 @@ export async function POST(req: Request) {
       .refine((s) => /^\d+(,\d+)*$/.test(s), {
         message: "jubileeYearsCsv must be comma-separated integers",
       }),
+    smtpHost: z.string().optional().transform((s) => s?.trim() ?? ""),
+    smtpPort: z.coerce.number().int().min(1).max(65535).default(465),
+    smtpUser: z.string().optional().transform((s) => s?.trim() ?? ""),
+    smtpPass: z.string().optional().transform((s) => s?.trim() ?? ""),
+    smtpFrom: z.string().optional().transform((s) => s?.trim() ?? ""),
+    sendOnBirthday: z.coerce.boolean().default(true),
+    sendOnJubilee: z.coerce.boolean().default(true),
+    dailySendHour: z.coerce.number().int().min(0).max(23).default(8),
   });
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) {

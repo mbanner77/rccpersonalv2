@@ -31,4 +31,12 @@ model Setting {
   birthdayEmailTemplate  String   @default("Happy Birthday, {{firstName}}!")
   jubileeEmailTemplate   String   @default("Congrats on {{years}} years, {{firstName}}!")
   jubileeYearsCsv        String   @default("5,10,15,20,25,30,35,40")
+  smtpHost               String   @default("")
+  smtpPort               Int      @default(465)
+  smtpUser               String   @default("")
+  smtpPass               String   @default("")
+  smtpFrom               String   @default("")
+  sendOnBirthday         Boolean  @default(true)
+  sendOnJubilee          Boolean  @default(true)
+  dailySendHour          Int      @default(8) // 0-23
 }

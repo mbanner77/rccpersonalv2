@@ -7,18 +7,31 @@ type SettingsDto = {
   birthdayEmailTemplate: string;
   jubileeEmailTemplate: string;
   jubileeYearsCsv: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPass: string;
+  smtpFrom: string;
+  sendOnBirthday: boolean;
+  sendOnJubilee: boolean;
+  dailySendHour: number;
 };
 
 export default function SettingsPage() {
   const [data, setData] = useState<SettingsDto | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [testTo, setTestTo] = useState("");
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     (async () => {
       const res = await fetch("/api/settings");
       const json = await res.json();
       setData(json);
+      if (typeof json.managerEmails === "string" && json.managerEmails.includes("@")) {
+        setTestTo(json.managerEmails.split(",")[0].trim());
+      }
     })();
   }, []);
 
@@ -48,7 +61,7 @@ export default function SettingsPage() {
       {!data ? (
         <p className="text-zinc-600">Lade…</p>
       ) : (
-        <form onSubmit={onSubmit} className="space-y-4 max-w-2xl">
+        <form onSubmit={onSubmit} className="space-y-6 max-w-2xl">
           <div>
             <label className="block text-sm font-medium">Manager-Verteiler (Komma-getrennt)</label>
             <input
@@ -81,6 +94,63 @@ export default function SettingsPage() {
               onChange={(e) => update("jubileeEmailTemplate", e.target.value)}
             />
           </div>
+
+          <div className="pt-4 border-t">
+            <h2 className="text-lg font-medium mb-2">E-Mail-Server</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium">SMTP Host</label>
+                <input className="mt-1 w-full border rounded p-2" value={data.smtpHost} onChange={(e) => update("smtpHost", e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">SMTP Port</label>
+                <input type="number" className="mt-1 w-full border rounded p-2" value={data.smtpPort} onChange={(e) => update("smtpPort", Number(e.target.value))} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">SMTP Benutzer</label>
+                <input className="mt-1 w-full border rounded p-2" value={data.smtpUser} onChange={(e) => update("smtpUser", e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">SMTP Passwort</label>
+                <input type="password" className="mt-1 w-full border rounded p-2" value={data.smtpPass} onChange={(e) => update("smtpPass", e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium">Absender (From)</label>
+                <input className="mt-1 w-full border rounded p-2" value={data.smtpFrom} onChange={(e) => update("smtpFrom", e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <h2 className="text-lg font-medium mb-2">Sendezeit & Ereignisse</h2>
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={data.sendOnBirthday} onChange={(e) => update("sendOnBirthday", e.target.checked)} /> Geburtstagsmails senden
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={data.sendOnJubilee} onChange={(e) => update("sendOnJubilee", e.target.checked)} /> Jubiläumsmails senden
+              </label>
+              <label className="flex items-center gap-2">
+                Stunde:
+                <input type="number" min={0} max={23} value={data.dailySendHour} onChange={(e) => update("dailySendHour", Number(e.target.value))} className="border rounded p-1 w-16" />
+              </label>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <h2 className="text-lg font-medium mb-2">Testmail</h2>
+            <div className="flex items-center gap-2">
+              <input className="border rounded p-2 flex-1" placeholder="Empfänger" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
+              <button type="button" disabled={testing} onClick={async () => {
+                setTesting(true); setMsg("");
+                try {
+                  const res = await fetch("/api/settings/test-mail", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ to: testTo }) });
+                  setMsg(res.ok ? "Testmail gesendet" : "Fehler beim Senden");
+                } finally { setTesting(false); }
+              }} className="rounded border px-3 py-2">{testing ? "Sende…" : "Testmail senden"}</button>
+            </div>
+          </div>
+
           <button disabled={saving} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
             {saving ? "Speichern…" : "Speichern"}
           </button>

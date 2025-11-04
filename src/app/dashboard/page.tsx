@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { db } from "@/lib/prisma";
+import Controls from "./Controls";
 import { findUpcomingJubilees, parseJubileeYears, type EmployeeLike, isBirthday } from "@/lib/jubilee";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -101,31 +102,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
   return (
     <div className="p-8 space-y-8">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-zinc-600">Zeitraum:</span>
-        {[7, 30, 60, 90].map((d) => (
-          <a
-            key={d}
-            href={`?days=${d}&year=${currYear}`}
-            className={`rounded border px-2 py-1 ${d === windowDays ? "bg-black text-white" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
-          >
-            {d} Tage
-          </a>
-        ))}
-        <span className="ml-4 text-zinc-600">Jahr:</span>
-        {([currYear - 1, currYear, currYear + 1] as number[]).map((y) => {
-          const isActive = y === currYear;
-          return (
-            <a
-              key={y}
-              href={`?days=${windowDays}&year=${y}`}
-              className={`rounded border px-2 py-1 ${isActive ? "bg-black text-white" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
-            >
-              {y}
-            </a>
-          );
-        })}
-      </div>
+      <Controls years={[currYear - 1, currYear, currYear + 1]} />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-lg border p-4 bg-white dark:bg-zinc-900">
