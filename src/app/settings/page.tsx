@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+type TestLog = { ts: string; message: string };
+
 type SettingsDto = {
   managerEmails: string;
   birthdayEmailTemplate: string;
@@ -23,6 +25,9 @@ type TestResult = {
   messageId?: string;
   response?: string;
   envelope?: { from?: string; to?: string[] };
+  logs?: TestLog[];
+  durationMs?: number;
+  config?: { host: string; port: number; user: string; from: string; secure: boolean };
   error?: string;
 };
 
@@ -33,6 +38,7 @@ export default function SettingsPage() {
   const [testTo, setTestTo] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -165,6 +171,11 @@ export default function SettingsPage() {
                   }
                 } finally { setTesting(false); }
               }} className="rounded border px-3 py-2">{testing ? "Sende…" : "Testmail senden"}</button>
+              {testResult && (
+                <button type="button" onClick={() => setShowDialog(true)} className="rounded border px-3 py-2">
+                  Details
+                </button>
+              )}
             </div>
             {testResult && (
               <div className="mt-3 text-xs bg-zinc-50 dark:bg-zinc-900 border rounded p-3 space-y-1">
@@ -176,6 +187,7 @@ export default function SettingsPage() {
                 {testResult.envelope && (
                   <p>Envelope: From {testResult.envelope.from ?? "?"} → {(testResult.envelope.to ?? []).join(", ") || "?"}</p>
                 )}
+                {typeof testResult.durationMs === "number" && <p>Dauer: {testResult.durationMs} ms</p>}
               </div>
             )}
           </div>
@@ -185,6 +197,49 @@ export default function SettingsPage() {
           </button>
           {msg && <p className="text-sm text-zinc-700">{msg}</p>}
         </form>
+      )}
+
+      {showDialog && testResult && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-zinc-950 border rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <h3 className="text-lg font-semibold">SMTP Testlog</h3>
+              <button onClick={() => setShowDialog(false)} className="text-sm text-zinc-600 hover:text-zinc-900">Schließen</button>
+            </div>
+            <div className="p-4 space-y-4 text-sm overflow-y-auto">
+              {testResult.config && (
+                <div>
+                  <h4 className="font-medium">Konfiguration</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-xs text-zinc-600">
+                    <span>Host: {testResult.config.host}:{testResult.config.port}</span>
+                    <span>User: {testResult.config.user}</span>
+                    <span>From: {testResult.config.from}</span>
+                    <span>Secure: {testResult.config.secure ? "Ja" : "Nein"}</span>
+                  </div>
+                </div>
+              )}
+              <div>
+                <h4 className="font-medium">Log-Ausgabe</h4>
+                <div className="bg-zinc-50 dark:bg-zinc-900 border rounded p-3 space-y-1 max-h-56 overflow-y-auto">
+                  {(testResult.logs ?? []).map((entry) => (
+                    <div key={entry.ts}><span className="text-zinc-500">[{entry.ts}]</span> {entry.message}</div>
+                  ))}
+                  {(testResult.logs ?? []).length === 0 && <div className="text-zinc-500">Keine Logs verfügbar.</div>}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-medium">SMTP Antwort</h4>
+                <p>Accepted: {testResult.accepted?.join(", ") || "–"}</p>
+                <p>Rejected: {testResult.rejected?.join(", ") || "–"}</p>
+                <p>Message ID: {testResult.messageId || "–"}</p>
+                <p>Response: {testResult.response || "–"}</p>
+                <p>Envelope: From {testResult.envelope?.from ?? "?"} → {(testResult.envelope?.to ?? []).join(", ") || "?"}</p>
+                {typeof testResult.durationMs === "number" && <p>Dauer: {testResult.durationMs} ms</p>}
+                {testResult.error && <p className="text-red-600">Fehler: {testResult.error}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

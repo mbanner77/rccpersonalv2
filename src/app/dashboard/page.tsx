@@ -2,9 +2,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/lib/prisma";
 import Controls from "./Controls";
 import { findUpcomingJubilees, parseJubileeYears, type EmployeeLike, isBirthday } from "@/lib/jubilee";
-import dynamicImport from "next/dynamic";
-
-const AiAssistant = dynamicImport(() => import("./AiAssistant"), { ssr: false, loading: () => <div className="rounded border p-4 bg-white dark:bg-zinc-900 text-sm text-zinc-600">Lade KI-Assistent…</div> });
+import AiAssistant from "./AiAssistant";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
