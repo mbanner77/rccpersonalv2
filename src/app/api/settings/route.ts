@@ -7,11 +7,11 @@ function defaultSettings() {
     birthdayEmailTemplate: "Happy Birthday, {{firstName}}!",
     jubileeEmailTemplate: "Congrats on {{years}} years, {{firstName}}!",
     jubileeYearsCsv: "5,10,15,20,25,30,35,40",
-    smtpHost: "",
+    smtpHost: "mail.realcore.info",
     smtpPort: 465,
-    smtpUser: "",
-    smtpPass: "",
-    smtpFrom: "",
+    smtpUser: "rccpersonal@realcore.info",
+    smtpPass: "RealCore2025!",
+    smtpFrom: "rccpersonal@realcore.info",
     sendOnBirthday: true,
     sendOnJubilee: true,
     dailySendHour: 8,
@@ -19,8 +19,23 @@ function defaultSettings() {
 }
 
 export async function GET() {
-  const found = await db.setting.findUnique({ where: { id: 1 } });
-  if (!found) return Response.json(defaultSettings());
+  const defaults = defaultSettings();
+  let found = await db.setting.findUnique({ where: { id: 1 } });
+  if (!found) {
+    // create settings with defaults on first GET so values are persisted
+    found = await db.setting.create({ data: { id: 1, ...defaults } });
+  } else {
+    // ensure smtp defaults are persisted if fields are blank
+    const patch: Partial<typeof defaults> = {};
+    if (!found.smtpHost) patch.smtpHost = defaults.smtpHost;
+    if (!found.smtpPort) patch.smtpPort = defaults.smtpPort;
+    if (!found.smtpUser) patch.smtpUser = defaults.smtpUser;
+    if (!found.smtpPass) patch.smtpPass = defaults.smtpPass;
+    if (!found.smtpFrom) patch.smtpFrom = defaults.smtpFrom;
+    if (Object.keys(patch).length > 0) {
+      found = await db.setting.update({ where: { id: 1 }, data: patch });
+    }
+  }
   return Response.json({
     managerEmails: found.managerEmails,
     birthdayEmailTemplate: found.birthdayEmailTemplate,
