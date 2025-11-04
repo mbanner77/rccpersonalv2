@@ -70,7 +70,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     }
   }
 
-  function Chart({ data, title }: { data: number[]; title: string }) {
+  function Chart({ data, title, kind }: { data: number[]; title: string; kind: "birthdays" | "jubilees" | "hires" }) {
     const max = Math.max(1, ...data);
     const w = 560;
     const h = 140;
@@ -84,10 +84,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
             const x = i * barW + 6;
             const y = h - 6 - bh;
             return (
-              <g key={i}>
-                <rect x={x} y={y} width={barW - 12} height={bh} rx={3} className="fill-zinc-800 dark:fill-zinc-200" />
-                <text x={x + (barW - 12) / 2} y={h - 8} textAnchor="middle" fontSize="10" className="fill-zinc-600">{monthLabels[i]}</text>
-              </g>
+              <a key={i} href={`/dashboard/drilldown?kind=${kind}&year=${currYear}&month=${i}`}>
+                <g className="cursor-pointer">
+                  <rect x={x} y={y} width={barW - 12} height={bh} rx={3} className="fill-zinc-800 dark:fill-zinc-200" />
+                  <text x={x + (barW - 12) / 2} y={h - 8} textAnchor="middle" fontSize="10" className="fill-zinc-600">{monthLabels[i]}</text>
+                </g>
+              </a>
             );
           })}
         </svg>
@@ -165,9 +167,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
 
       <h2 className="text-xl font-medium">Auswertungen {currYear}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Chart data={birthdaysPerMonth} title="Geburtstage pro Monat" />
-        <Chart data={jubileesPerMonth} title="Jubiläen pro Monat" />
-        <Chart data={hiresPerMonth} title="Eintritte pro Monat" />
+        <Chart data={birthdaysPerMonth} title="Geburtstage pro Monat" kind="birthdays" />
+        <Chart data={jubileesPerMonth} title="Jubiläen pro Monat" kind="jubilees" />
+        <Chart data={hiresPerMonth} title="Eintritte pro Monat" kind="hires" />
       </div>
 
       <h2 className="text-xl font-medium">Geburtstage nach Quartal {currYear}</h2>
@@ -176,7 +178,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           <div key={q.title} className="rounded-lg border p-4 bg-white dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <div className="text-sm text-zinc-600">{q.title}</div>
-              <div className="text-sm text-zinc-600">{q.items.length} Personen</div>
+              <div className="flex items-center gap-3 text-sm text-zinc-600">
+                <a className="underline" href={`/dashboard/drilldown?kind=birthdays&year=${currYear}&quarter=${quarters.indexOf(q)}`}>Details</a>
+                <a className="underline" href={`/api/export/dashboard?kind=birthdays&year=${currYear}&quarter=${quarters.indexOf(q)}`}>CSV</a>
+                <div>{q.items.length} Personen</div>
+              </div>
             </div>
             {q.items.length === 0 ? (
               <p className="text-zinc-600 mt-2">Keine Geburtstage.</p>
