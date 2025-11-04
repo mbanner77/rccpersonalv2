@@ -36,6 +36,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     birthdaysPerMonth[d.getMonth()]++;
   }
 
+  // Birthdays per quarter (current selected year)
+  type Person = { name: string; dateLabel: string };
+  const quarters: { title: string; items: Person[] }[] = [
+    { title: "Q1 (Jan–Mär)", items: [] },
+    { title: "Q2 (Apr–Jun)", items: [] },
+    { title: "Q3 (Jul–Sep)", items: [] },
+    { title: "Q4 (Okt–Dez)", items: [] },
+  ];
+  for (const e of employees) {
+    const b = new Date(e.birthDate);
+    const m = b.getMonth();
+    const q = Math.floor(m / 3);
+    const thisYear = new Date(currYear, m, b.getDate());
+    const name = `${e.lastName}, ${e.firstName}`;
+    quarters[q].items.push({ name, dateLabel: thisYear.toLocaleDateString() });
+  }
+  for (const q of quarters) q.items.sort((a, b) => a.dateLabel.localeCompare(b.dateLabel));
+
   const hiresPerMonth = Array.from({ length: 12 }, () => 0);
   for (const e of employees) {
     const s = new Date(e.startDate);
@@ -93,9 +111,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           </a>
         ))}
         <span className="ml-4 text-zinc-600">Jahr:</span>
-        <a href={`?days=${windowDays}&year=${currYear - 1}`} className="rounded border px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800">{currYear - 1}</a>
-        <a href={`?days=${windowDays}&year=${currYear}`} className="rounded border px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 {currYear === new Date().getFullYear() ? 'bg-black text-white' : ''}">{currYear}</a>
-        <a href={`?days=${windowDays}&year=${currYear + 1}`} className="rounded border px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800">{currYear + 1}</a>
+        {([currYear - 1, currYear, currYear + 1] as number[]).map((y) => {
+          const isActive = y === currYear;
+          return (
+            <a
+              key={y}
+              href={`?days=${windowDays}&year=${y}`}
+              className={`rounded border px-2 py-1 ${isActive ? "bg-black text-white" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
+            >
+              {y}
+            </a>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -141,6 +168,30 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
         <Chart data={birthdaysPerMonth} title="Geburtstage pro Monat" />
         <Chart data={jubileesPerMonth} title="Jubiläen pro Monat" />
         <Chart data={hiresPerMonth} title="Eintritte pro Monat" />
+      </div>
+
+      <h2 className="text-xl font-medium">Geburtstage nach Quartal {currYear}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {quarters.map((q) => (
+          <div key={q.title} className="rounded-lg border p-4 bg-white dark:bg-zinc-900">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-zinc-600">{q.title}</div>
+              <div className="text-sm text-zinc-600">{q.items.length} Personen</div>
+            </div>
+            {q.items.length === 0 ? (
+              <p className="text-zinc-600 mt-2">Keine Geburtstage.</p>
+            ) : (
+              <ul className="mt-2 divide-y">
+                {q.items.map((p) => (
+                  <li key={`${q.title}-${p.name}-${p.dateLabel}`} className="py-1 flex items-center justify-between">
+                    <span>{p.name}</span>
+                    <span className="text-sm text-zinc-600">{p.dateLabel}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

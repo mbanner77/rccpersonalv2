@@ -11,11 +11,18 @@ export function renderTemplate(template: string, vars: Record<string, string | n
 }
 
 export async function sendMail({ to, subject, html }: MailOptions) {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || user;
+  // Defaults (fallback) per Anforderung
+  const defaultHost = "mail.realcore.info";
+  const defaultPort = 465;
+  const defaultUser = "rccpersonal@realcore.info";
+  const defaultPass = "RealCore2025!";
+  const defaultFrom = defaultUser;
+
+  const host = process.env.SMTP_HOST || defaultHost;
+  const port = Number(process.env.SMTP_PORT || defaultPort);
+  const user = process.env.SMTP_USER || defaultUser;
+  const pass = process.env.SMTP_PASS || defaultPass;
+  const from = process.env.SMTP_FROM || user || defaultFrom;
 
   if (!host || !user || !pass || !from) {
     console.warn("SMTP not fully configured; skipping send.");
