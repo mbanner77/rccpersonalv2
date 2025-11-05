@@ -1,4 +1,5 @@
 import { db } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
   const units = await db.unit.findMany({
@@ -9,6 +10,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  await requireAdmin();
   const body = await req.json().catch(() => ({}));
   const name = String(body?.name ?? "").trim();
   if (!name) return Response.json({ error: "name required" }, { status: 400 });
@@ -19,6 +21,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  await requireAdmin();
   const body = await req.json().catch(() => ({}));
   const id = String(body?.id ?? "").trim();
   if (!id) return Response.json({ error: "id required" }, { status: 400 });
@@ -39,6 +42,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  await requireAdmin();
   const body = await req.json().catch(() => ({}));
   const id = String(body?.id ?? "").trim();
   if (!id) return Response.json({ error: "id required" }, { status: 400 });

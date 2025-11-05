@@ -1,4 +1,5 @@
 import { db } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 import nodemailer from "nodemailer";
 
 type LogEntry = { ts: string; message: string };
@@ -6,6 +7,7 @@ type LogEntry = { ts: string; message: string };
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  await requireAdmin();
   const logs: LogEntry[] = [];
   const startedAt = Date.now();
   const log = (message: string) => {

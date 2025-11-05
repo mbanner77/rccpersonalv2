@@ -1,4 +1,5 @@
 import { db } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 import { z } from "zod";
 
 function defaultSettings() {
@@ -21,6 +22,7 @@ function defaultSettings() {
 }
 
 export async function GET() {
+  await requireAdmin();
   const defaults = defaultSettings();
   let found = await db.setting.findUnique({ where: { id: 1 } });
   if (!found) {
@@ -59,6 +61,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  await requireAdmin();
   const schema = z.object({
     managerEmails: z.string().transform((s) => s.trim()),
     birthdayEmailTemplate: z.string().min(1),
