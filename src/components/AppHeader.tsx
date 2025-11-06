@@ -29,8 +29,8 @@ export default function AppHeader() {
         <Image
           src="https://realcore.info/bilder/rc-logo.png"
           alt="realcore"
-          width={96}
-          height={32}
+          width={256}
+          height={80}
           unoptimized
           className="h-6 w-auto object-contain"
         />
