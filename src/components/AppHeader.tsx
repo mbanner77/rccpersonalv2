@@ -26,15 +26,14 @@ export default function AppHeader() {
   return (
     <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
       <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-        <span className="relative h-6 w-6">
-          <Image
-            src="https://realcore.info/bilder/rc-logo.png"
-            alt="realcore"
-            fill
-            sizes="24px"
-            unoptimized
-          />
-        </span>
+        <Image
+          src="https://realcore.info/bilder/rc-logo.png"
+          alt="realcore"
+          width={96}
+          height={32}
+          unoptimized
+          className="h-6 w-auto object-contain"
+        />
         <span className="hidden sm:inline">Anniversaries</span>
       </Link>
       <div className="flex items-center gap-6 text-sm">

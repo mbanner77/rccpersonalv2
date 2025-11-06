@@ -35,6 +35,32 @@ const EMPTY_FORM: FormState = {
   password: "",
 };
 
+function parseApiError(error: unknown, fallback: string): string {
+  if (!error) return fallback;
+  if (typeof error === "string") return error;
+  if (Array.isArray(error)) {
+    const messages: string[] = error
+      .map((item) => parseApiError(item, ""))
+      .filter((msg): msg is string => Boolean(msg));
+    if (messages.length) return messages.join("\n");
+    return fallback;
+  }
+  if (typeof error === "object") {
+    const maybeMessage = (error as { message?: unknown }).message;
+    if (typeof maybeMessage === "string" && maybeMessage.trim()) {
+      return maybeMessage;
+    }
+    const formErrors = (error as { formErrors?: string[] }).formErrors ?? [];
+    const fieldErrorsRecord = (error as { fieldErrors?: Record<string, string[]> }).fieldErrors ?? {};
+    const fieldErrors = Object.values(fieldErrorsRecord).flat().filter(Boolean);
+    const combined = [...formErrors, ...fieldErrors];
+    if (combined.length) {
+      return combined.join("\n");
+    }
+  }
+  return fallback;
+}
+
 export default function AdminUsersPage() {
   const { user, loading: sessionLoading, error: sessionError } = useSession();
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -121,13 +147,14 @@ export default function AdminUsersPage() {
           email: form.email,
           name: form.name,
           role: form.role,
-          unitId: form.unitId,
+          unitId: form.unitId ?? undefined,
           password: form.password,
         }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(json?.error ?? "Fehler beim Anlegen");
+        const message = parseApiError(json?.error ?? json, "Fehler beim Anlegen");
+        throw new Error(message);
       }
       setUsers((prev) => [...prev, json as UserDto]);
       closeDialog();
@@ -150,13 +177,14 @@ export default function AdminUsersPage() {
           email: form.email,
           name: form.name,
           role: form.role,
-          unitId: form.unitId,
+          unitId: form.unitId ?? undefined,
           password: form.password || undefined,
         }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(json?.error ?? "Fehler beim Aktualisieren");
+        const message = parseApiError(json?.error ?? json, "Fehler beim Aktualisieren");
+        throw new Error(message);
       }
       setUsers((prev) => prev.map((u) => (u.id === activeUser.id ? (json as UserDto) : u)));
       closeDialog();
