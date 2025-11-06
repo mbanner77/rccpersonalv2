@@ -64,11 +64,11 @@ export default function AppHeader() {
           </div>
           {user ? (
             <LogoutButton />
-          ) : (
+          ) : !loading ? (
             <Link className="rounded border px-3 py-1 text-xs sm:text-sm" href="/login">
               Login
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
