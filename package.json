@@ -8,8 +8,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "npm run prisma:migrate-deploy && next start",
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "prisma:migrate-deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
