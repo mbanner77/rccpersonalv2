@@ -1,4 +1,4 @@
-import type { EmployeeStatus } from "@prisma/client";
+type EmployeeStatus = "ACTIVE" | "EXITED";
 import { db } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth";
 
@@ -12,7 +12,24 @@ export async function GET() {
   const items = await db.employee.findMany({
     where: baseWhere,
     orderBy: { lastName: "asc" },
-    include: { unit: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      startDate: true,
+      birthDate: true,
+      lockAll: true,
+      lockFirstName: true,
+      lockLastName: true,
+      lockStartDate: true,
+      lockBirthDate: true,
+      lockEmail: true,
+      unitId: true,
+      status: true,
+      exitDate: true,
+      unit: { select: { id: true, name: true, leader: true, deputy: true, _count: false } },
+    },
   });
   return Response.json(items);
 }

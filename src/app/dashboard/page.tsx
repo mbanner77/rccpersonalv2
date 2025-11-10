@@ -177,7 +177,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Link
-          href={buildFocusHref("jubilees-7")}
+          href={`${buildFocusHref("jubilees-7")}#focus`}
           className={`rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-1 block transition hover:border-lime-400 hover:-translate-y-0.5 ${
             focusParam === "jubilees-7" ? "border-lime-500 ring-2 ring-lime-400" : ""
           }`}
@@ -187,7 +187,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           <p className="text-xs text-zinc-500">{hits7.slice(0, 3).map((h) => `${h.employee.firstName} ${h.employee.lastName} (${h.years}J)`).join(", ") || "Keine."}</p>
         </Link>
         <Link
-          href={buildFocusHref("jubilees-window")}
+          href={`${buildFocusHref("jubilees-window")}#focus`}
           className={`rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-1 block transition hover:border-lime-400 hover:-translate-y-0.5 ${
             focusParam === "jubilees-window" ? "border-lime-500 ring-2 ring-lime-400" : ""
           }`}
@@ -197,7 +197,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           <p className="text-xs text-zinc-500">Spitzenjahr: {order[0] ?? "–"} Jahre</p>
         </Link>
         <Link
-          href={buildFocusHref("birthdays-today")}
+          href={`${buildFocusHref("birthdays-today")}#focus`}
           className={`rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-1 block transition hover:border-lime-400 hover:-translate-y-0.5 ${
             focusParam === "birthdays-today" ? "border-lime-500 ring-2 ring-lime-400" : ""
           }`}
@@ -207,7 +207,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           <p className="text-xs text-zinc-500">Gesamt Geburtstage {currYear}: {totals.birthdays}</p>
         </Link>
         <Link
-          href={buildFocusHref("new-hires")}
+          href={`${buildFocusHref("new-hires")}#focus`}
           className={`rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-1 block transition hover:border-lime-400 hover:-translate-y-0.5 ${
             focusParam === "new-hires" ? "border-lime-500 ring-2 ring-lime-400" : ""
           }`}
@@ -221,7 +221,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           </p>
         </Link>
         <Link
-          href={buildFocusHref("exits")}
+          href={`${buildFocusHref("exits")}#focus`}
           className={`rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-1 block transition hover:border-lime-400 hover:-translate-y-0.5 ${
             focusParam === "exits" ? "border-lime-500 ring-2 ring-lime-400" : ""
           }`}
@@ -235,7 +235,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       </div>
 
       {focusParam === "birthdays-today" && (
-        <div className="rounded-lg border p-4 bg-white dark:bg-zinc-900">
+        <div id="focus" className="rounded-lg border p-4 bg-white dark:bg-zinc-900">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-medium">Geburtstage heute</h2>
@@ -262,7 +262,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       )}
 
       {focusParam === "exits" && (
-        <div className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-3">
+        <div id="focus" className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-medium">Ausgetretene Mitarbeitende</h2>
@@ -288,7 +288,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       )}
 
       {focusParam === "jubilees-7" && (
-        <div className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-2">
+        <div id="focus" className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">Jubiläen in den nächsten 7 Tagen</h2>
             <Link href={buildFocusHref()} className="text-sm text-zinc-500 underline">Schließen</Link>
@@ -309,7 +309,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       )}
 
       {focusParam === "jubilees-window" && (
-        <div className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-3">
+        <div id="focus" className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-medium">Jubiläen in den nächsten {windowDays} Tagen</h2>
@@ -338,7 +338,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       )}
 
       {focusParam === "new-hires" && (
-        <div className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-3">
+        <div id="focus" className="rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-medium">Eingetretene Mitarbeitende</h2>
