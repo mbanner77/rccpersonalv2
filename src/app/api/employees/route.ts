@@ -103,6 +103,13 @@ export async function PATCH(req: Request) {
 
   const current = await db.employee.findUnique({ where: { id } });
   if (!current) return Response.json({ error: "not found" }, { status: 404 });
+  // Validate target unit if provided
+  if (Object.prototype.hasOwnProperty.call(body, "unitId") && data.unitId) {
+    const exists = await db.unit.findUnique({ where: { id: data.unitId as string } });
+    if (!exists) {
+      return Response.json({ error: "unit not found" }, { status: 400 });
+    }
+  }
   if (user.role === "UNIT_LEAD" && user.unitId) {
     const desiredUnitId = Object.prototype.hasOwnProperty.call(data, "unitId")
       ? (data.unitId as string | null)
@@ -134,8 +141,23 @@ export async function PATCH(req: Request) {
     data.exitDate = null;
   }
 
-  const updated = await db.employee.update({ where: { id }, data, include: { unit: true } });
-  return Response.json(updated);
+  try {
+    console.log("[employees PATCH] incoming", {
+      userRole: user.role,
+      employeeId: id,
+      currentUnitId: current.unitId,
+      incomingUnitId: Object.prototype.hasOwnProperty.call(body, "unitId") ? (data.unitId ?? null) : "<unchanged>",
+    });
+    const updated = await db.employee.update({ where: { id }, data, include: { unit: true } });
+    console.log("[employees PATCH] updated", {
+      employeeId: id,
+      savedUnitId: updated.unitId,
+    });
+    return Response.json(updated);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "update failed";
+    return Response.json({ error: msg }, { status: 400 });
+  }
 }
 
 export async function DELETE(req: Request) {
