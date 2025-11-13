@@ -197,7 +197,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           <p className="text-xs text-zinc-500">Spitzenjahr: {order[0] ?? "–"} Jahre</p>
         </Link>
         <Link
-          href={`${buildFocusHref("birthdays-today")}#focus`}
+          href={`/dashboard/drilldown?kind=birthdays&year=${currYear}&month=${now.getMonth()}`}
           className={`rounded-lg border p-4 bg-white dark:bg-zinc-900 space-y-1 block transition hover:border-lime-400 hover:-translate-y-0.5 ${
             focusParam === "birthdays-today" ? "border-lime-500 ring-2 ring-lime-400" : ""
           }`}
