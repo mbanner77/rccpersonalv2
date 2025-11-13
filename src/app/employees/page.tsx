@@ -132,8 +132,10 @@ export default function EmployeesPage() {
   }
 
   function onFieldChange(id: string, key: string, value: unknown) {
-    if (!items) return;
-    setItems(items.map((it) => (it.id === id ? { ...it, [key]: value } : it)));
+    setItems((prev) => {
+      if (!prev) return prev;
+      return prev.map((it) => (it.id === id ? { ...it, [key]: value } : it));
+    });
   }
 
   useEffect(() => {
