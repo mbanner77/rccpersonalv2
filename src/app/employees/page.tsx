@@ -362,7 +362,7 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
                     <button onClick={createUnit} className="border rounded px-3 py-2 disabled:opacity-50" disabled={creating || newUnit.name.trim() === "" || units.some((u) => u.name.trim().toLowerCase() === newUnit.name.trim().toLowerCase())}>Anlegen</button>
                   </div>
                 </div>
-              )}
+              })}
             </div>
           </div>
           <div className="p-4 space-y-4">
