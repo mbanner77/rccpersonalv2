@@ -432,50 +432,51 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
                 const nameDuplicate = units.some((u) => u.id !== unit.id && u.name.trim().toLowerCase() === unit.name.trim().toLowerCase());
                 const disableSave = saving || nameEmpty || nameDuplicate || !isDirty;
                 return (
-                <div key={unit.id} className="border rounded-lg p-3 space-y-2 bg-zinc-50 dark:bg-zinc-900">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium">{original?.name ?? unit.name}</div>
-                    <span className="text-xs px-2 py-0.5 rounded-full border bg-white dark:bg-zinc-800">{unit._count?.employees ?? "–"} Mitarbeitende</span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <label className="text-xs text-zinc-500">Name
-                      <input
-                        className="border rounded p-2 w-full"
-                        value={unit.name}
-                        onChange={(e) => updateLocal(unit.id, { name: e.target.value })}
-                      />
-                    </label>
-                    <label className="text-xs text-zinc-500">Leitung
-                      <input
-                        className="border rounded p-2 w-full"
-                        value={unit.leader ?? ""}
-                        onChange={(e) => updateLocal(unit.id, { leader: e.target.value })}
-                      />
-                    </label>
-                    <label className="text-xs text-zinc-500">Stellvertretung
-                      <input
-                        className="border rounded p-2 w-full"
-                        value={unit.deputy ?? ""}
-                        onChange={(e) => updateLocal(unit.id, { deputy: e.target.value })}
-                      />
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-zinc-500">
-                    <div className="flex gap-2">
-                      {isDirty && (
-                        <button onClick={() => original && updateLocal(unit.id, { name: original.name, leader: original.leader ?? null, deputy: original.deputy ?? null })} className="border rounded px-3 py-1">Zurücksetzen</button>
-                      )}
+                  <div key={unit.id} className="border rounded-lg p-3 space-y-2 bg-zinc-50 dark:bg-zinc-900">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium">{original?.name ?? unit.name}</div>
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-white dark:bg-zinc-800">{unit._count?.employees ?? "–"} Mitarbeitende</span>
                     </div>
-                    <div className="flex gap-2 text-sm">
-                      <button onClick={() => saveUnit(unit)} className="border rounded px-3 py-1 disabled:opacity-50" disabled={disableSave}>Speichern</button>
-                      <button onClick={() => deleteUnit(unit.id)} className="border rounded px-3 py-1 text-red-600 disabled:opacity-50" disabled={saving}>Löschen</button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <label className="text-xs text-zinc-500">Name
+                        <input
+                          className="border rounded p-2 w-full"
+                          value={unit.name}
+                          onChange={(e) => updateLocal(unit.id, { name: e.target.value })}
+                        />
+                      </label>
+                      <label className="text-xs text-zinc-500">Leitung
+                        <input
+                          className="border rounded p-2 w-full"
+                          value={unit.leader ?? ""}
+                          onChange={(e) => updateLocal(unit.id, { leader: e.target.value })}
+                        />
+                      </label>
+                      <label className="text-xs text-zinc-500">Stellvertretung
+                        <input
+                          className="border rounded p-2 w-full"
+                          value={unit.deputy ?? ""}
+                          onChange={(e) => updateLocal(unit.id, { deputy: e.target.value })}
+                        />
+                      </label>
                     </div>
+                    <div className="flex items-center justify-between text-xs text-zinc-500">
+                      <div className="flex gap-2">
+                        {isDirty && (
+                          <button onClick={() => original && updateLocal(unit.id, { name: original.name, leader: original.leader ?? null, deputy: original.deputy ?? null })} className="border rounded px-3 py-1">Zurücksetzen</button>
+                        )}
+                      </div>
+                      <div className="flex gap-2 text-sm">
+                        <button onClick={() => saveUnit(unit)} className="border rounded px-3 py-1 disabled:opacity-50" disabled={disableSave}>Speichern</button>
+                        <button onClick={() => deleteUnit(unit.id)} className="border rounded px-3 py-1 text-red-600 disabled:opacity-50" disabled={saving}>Löschen</button>
+                      </div>
+                    </div>
+                    {(nameEmpty || nameDuplicate) && (
+                      <div className="text-xs text-red-600">{nameEmpty ? "Name darf nicht leer sein" : "Name existiert bereits"}</div>
+                    )}
                   </div>
-                  {(nameEmpty || nameDuplicate) && (
-                    <div className="text-xs text-red-600">{nameEmpty ? "Name darf nicht leer sein" : "Name existiert bereits"}</div>
-                  )}
-                </div>
-              );})}
+                );
+              })}
           </div>
 
           <div className="border rounded-lg p-3 bg-zinc-50 dark:bg-zinc-900 space-y-2">
