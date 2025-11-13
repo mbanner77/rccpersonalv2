@@ -294,6 +294,7 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
   const [newUnit, setNewUnit] = useState({ name: "", leader: "", deputy: "" });
   const [error, setError] = useState<string>("");
   const [filter, setFilter] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => { setLocalUnits(units); }, [units]);
   function updateLocal(id: string, patch: Partial<Unit>) {
@@ -325,7 +326,9 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
     try {
       const res = await fetch("/api/units", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || res.statusText); }
-      setNewUnit({ name: "", leader: "", deputy: "" }); await onRefresh();
+      setNewUnit({ name: "", leader: "", deputy: "" });
+      await onRefresh();
+      setShowCreate(false);
     } catch (e) { setError(e instanceof Error ? e.message : "Fehler beim Anlegen"); } finally { setCreating(false); }
   }
 
@@ -342,9 +345,24 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
         </div>
         <div className="p-0 overflow-y-auto">
           <div className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur border-b">
-            <div className="p-3 flex items-center gap-2">
-              <input className="border rounded p-2 flex-1 min-w-[220px]" placeholder="Suche (Name)" value={filter} onChange={(e) => setFilter(e.target.value)} />
-              <div className="text-xs text-zinc-500 whitespace-nowrap">{localUnits.length} Units</div>
+            <div className="p-3 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <input className="border rounded p-2 flex-1 min-w-[220px]" placeholder="Suche (Name)" value={filter} onChange={(e) => setFilter(e.target.value)} />
+                <button onClick={() => setShowCreate((v) => !v)} className="border rounded px-3 py-2">
+                  {showCreate ? "Abbrechen" : "Neue Unit"}
+                </button>
+                <div className="text-xs text-zinc-500 whitespace-nowrap">{localUnits.length} Units</div>
+              </div>
+              {showCreate && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <input className="border rounded p-2" placeholder="Name" value={newUnit.name} onChange={(e) => setNewUnit((prev) => ({ ...prev, name: e.target.value }))} />
+                  <input className="border rounded p-2" placeholder="Leitung" value={newUnit.leader} onChange={(e) => setNewUnit((prev) => ({ ...prev, leader: e.target.value }))} />
+                  <input className="border rounded p-2" placeholder="Stellvertretung" value={newUnit.deputy} onChange={(e) => setNewUnit((prev) => ({ ...prev, deputy: e.target.value }))} />
+                  <div className="flex items-center gap-2">
+                    <button onClick={createUnit} className="border rounded px-3 py-2 disabled:opacity-50" disabled={creating || newUnit.name.trim() === "" || units.some((u) => u.name.trim().toLowerCase() === newUnit.name.trim().toLowerCase())}>Anlegen</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="p-4 space-y-4">
@@ -390,16 +408,7 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
                     )}
                   </div>
                 );
-              })}
-            </div>
-            <div className="border rounded-lg p-3 bg-zinc-50 dark:bg-zinc-900 space-y-2">
-              <h4 className="font-medium text-sm">Neue Unit anlegen</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input className="border rounded p-2" placeholder="Name" value={newUnit.name} onChange={(e) => setNewUnit((prev) => ({ ...prev, name: e.target.value }))} />
-                <input className="border rounded p-2" placeholder="Leitung" value={newUnit.leader} onChange={(e) => setNewUnit((prev) => ({ ...prev, leader: e.target.value }))} />
-                <input className="border rounded p-2" placeholder="Stellvertretung" value={newUnit.deputy} onChange={(e) => setNewUnit((prev) => ({ ...prev, deputy: e.target.value }))} />
-              </div>
-              <button onClick={createUnit} className="border rounded px-3 py-1 disabled:opacity-50" disabled={creating || newUnit.name.trim() === "" || units.some((u) => u.name.trim().toLowerCase() === newUnit.name.trim().toLowerCase())}>Anlegen</button>
+              )}
             </div>
           </div>
         </div>
