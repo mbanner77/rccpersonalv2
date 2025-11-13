@@ -16,8 +16,16 @@ export async function POST(req: Request) {
   if (!name) return Response.json({ error: "name required" }, { status: 400 });
   const leader = body?.leader ? String(body.leader).trim() : null;
   const deputy = body?.deputy ? String(body.deputy).trim() : null;
-  const created = await db.unit.create({ data: { name, leader, deputy } });
-  return Response.json(created, { status: 201 });
+  try {
+    const created = await db.unit.create({ data: { name, leader, deputy } });
+    return Response.json(created, { status: 201 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "create failed";
+    if (msg.includes("Unique constraint failed") || msg.includes("Unit_name_key") || msg.includes("P2002")) {
+      return Response.json({ error: "unit name already exists" }, { status: 409 });
+    }
+    return Response.json({ error: msg }, { status: 400 });
+  }
 }
 
 export async function PATCH(req: Request) {
@@ -37,8 +45,16 @@ export async function PATCH(req: Request) {
   if (Object.prototype.hasOwnProperty.call(body, "deputy")) {
     data.deputy = body.deputy ? String(body.deputy).trim() : null;
   }
-  const updated = await db.unit.update({ where: { id }, data });
-  return Response.json(updated);
+  try {
+    const updated = await db.unit.update({ where: { id }, data });
+    return Response.json(updated);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "update failed";
+    if (msg.includes("Unique constraint failed") || msg.includes("Unit_name_key") || msg.includes("P2002")) {
+      return Response.json({ error: "unit name already exists" }, { status: 409 });
+    }
+    return Response.json({ error: msg }, { status: 400 });
+  }
 }
 
 export async function DELETE(req: Request) {

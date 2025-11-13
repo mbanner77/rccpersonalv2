@@ -293,6 +293,11 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
   const [creating, setCreating] = useState(false);
   const [newUnit, setNewUnit] = useState({ name: "", leader: "", deputy: "" });
   const [error, setError] = useState<string>("");
+  const [filter, setFilter] = useState("");
+
+  useEffect(() => {
+    setLocalUnits(units);
+  }, [units]);
 
   function updateLocal(id: string, patch: Partial<Unit>) {
     setLocalUnits((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
@@ -307,9 +312,9 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           id: unit.id,
-          name: unit.name,
-          leader: unit.leader,
-          deputy: unit.deputy,
+          name: unit.name.trim(),
+          leader: unit.leader?.trim() || null,
+          deputy: unit.deputy?.trim() || null,
         }),
       });
       if (!res.ok) {
@@ -358,6 +363,11 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
       setError("Name darf nicht leer sein");
       return;
     }
+    const exists = units.some((u) => u.name.trim().toLowerCase() === payload.name.toLowerCase());
+    if (exists) {
+      setError("Name existiert bereits");
+      return;
+    }
     setCreating(true);
     setError("");
     try {
@@ -391,41 +401,64 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
           {error && <div className="text-sm text-red-600">{error}</div>}
 
           <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <input
+                className="border rounded p-2 flex-1 min-w-[220px]"
+                placeholder="Suche (Name)"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+              <div className="text-xs text-zinc-500">{localUnits.length} Units</div>
+            </div>
             {localUnits.length === 0 && <p className="text-sm text-zinc-600">Noch keine Units angelegt.</p>}
-            {localUnits.map((unit) => (
-              <div key={unit.id} className="border rounded p-3 space-y-2 bg-zinc-50 dark:bg-zinc-900">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <label className="text-xs text-zinc-500">Name
-                    <input
-                      className="border rounded p-2 w-full"
-                      value={unit.name}
-                      onChange={(e) => updateLocal(unit.id, { name: e.target.value })}
-                    />
-                  </label>
-                  <label className="text-xs text-zinc-500">Leitung
-                    <input
-                      className="border rounded p-2 w-full"
-                      value={unit.leader ?? ""}
-                      onChange={(e) => updateLocal(unit.id, { leader: e.target.value })}
-                    />
-                  </label>
-                  <label className="text-xs text-zinc-500">Stellvertretung
-                    <input
-                      className="border rounded p-2 w-full"
-                      value={unit.deputy ?? ""}
-                      onChange={(e) => updateLocal(unit.id, { deputy: e.target.value })}
-                    />
-                  </label>
-                </div>
-                <div className="flex items-center justify-between text-xs text-zinc-500">
-                  <span>Mitarbeiter: {unit._count?.employees ?? "–"}</span>
-                  <div className="flex gap-2 text-sm">
-                    <button onClick={() => saveUnit(unit)} className="border rounded px-3 py-1" disabled={saving}>Speichern</button>
-                    <button onClick={() => deleteUnit(unit.id)} className="border rounded px-3 py-1 text-red-600" disabled={saving}>Löschen</button>
+            {localUnits
+              .filter((u) => u.name.toLowerCase().includes(filter.trim().toLowerCase()))
+              .map((unit) => {
+                const original = units.find((x) => x.id === unit.id);
+                const isDirty = !original ||
+                  original.name !== unit.name ||
+                  (original.leader ?? "") !== (unit.leader ?? "") ||
+                  (original.deputy ?? "") !== (unit.deputy ?? "");
+                const nameEmpty = unit.name.trim() === "";
+                const nameDuplicate = units.some((u) => u.id !== unit.id && u.name.trim().toLowerCase() === unit.name.trim().toLowerCase());
+                const disableSave = saving || nameEmpty || nameDuplicate || !isDirty;
+                return (
+                <div key={unit.id} className="border rounded p-3 space-y-2 bg-zinc-50 dark:bg-zinc-900">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <label className="text-xs text-zinc-500">Name
+                      <input
+                        className="border rounded p-2 w-full"
+                        value={unit.name}
+                        onChange={(e) => updateLocal(unit.id, { name: e.target.value })}
+                      />
+                    </label>
+                    <label className="text-xs text-zinc-500">Leitung
+                      <input
+                        className="border rounded p-2 w-full"
+                        value={unit.leader ?? ""}
+                        onChange={(e) => updateLocal(unit.id, { leader: e.target.value })}
+                      />
+                    </label>
+                    <label className="text-xs text-zinc-500">Stellvertretung
+                      <input
+                        className="border rounded p-2 w-full"
+                        value={unit.deputy ?? ""}
+                        onChange={(e) => updateLocal(unit.id, { deputy: e.target.value })}
+                      />
+                    </label>
                   </div>
+                  <div className="flex items-center justify-between text-xs text-zinc-500">
+                    <span>Mitarbeiter: {unit._count?.employees ?? "–"}</span>
+                    <div className="flex gap-2 text-sm">
+                      <button onClick={() => saveUnit(unit)} className="border rounded px-3 py-1 disabled:opacity-50" disabled={disableSave}>Speichern</button>
+                      <button onClick={() => deleteUnit(unit.id)} className="border rounded px-3 py-1 text-red-600 disabled:opacity-50" disabled={saving}>Löschen</button>
+                    </div>
+                  </div>
+                  {(nameEmpty || nameDuplicate) && (
+                    <div className="text-xs text-red-600">{nameEmpty ? "Name darf nicht leer sein" : "Name existiert bereits"}</div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );})}
           </div>
 
           <div className="border rounded p-3 bg-zinc-50 dark:bg-zinc-900 space-y-2">
