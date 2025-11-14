@@ -16,10 +16,10 @@ export default async function Home() {
 
   return (
     <div className="space-y-10">
-      <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-zinc-50 to-white p-10 dark:from-zinc-900 dark:to-zinc-950">
+      <section className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 to-white p-10 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
         <div className="relative z-10 max-w-3xl">
-          <h1 className="text-4xl font-semibold tracking-tight">Jubiläen & Mitarbeiter leicht im Blick</h1>
-          <p className="mt-3 text-zinc-600 dark:text-zinc-400">
+          <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Jubiläen & Mitarbeiter leicht im Blick</h1>
+          <p className="mt-3 text-zinc-600 dark:text-zinc-300">
             Importiere Mitarbeiter, verwalte Daten und entdecke anstehende Jubiläen – inkl. automatischer E-Mail-Benachrichtigungen.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -33,22 +33,22 @@ export default async function Home() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-white p-5 dark:bg-zinc-900">
-          <div className="text-sm text-zinc-500">Mitarbeiter gesamt</div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="text-sm text-zinc-500 dark:text-zinc-400">Mitarbeiter gesamt</div>
           <div className="mt-1 text-4xl font-semibold">{totalEmployees}</div>
         </div>
-        <div className="rounded-xl border bg-white p-5 dark:bg-zinc-900">
-          <div className="text-sm text-zinc-500">Jubiläen (30 Tage)</div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="text-sm text-zinc-500 dark:text-zinc-400">Jubiläen (30 Tage)</div>
           <div className="mt-1 text-4xl font-semibold">{hits30.length}</div>
         </div>
-        <div className="rounded-xl border bg-white p-5 dark:bg-zinc-900">
-          <div className="text-sm text-zinc-500">Geburtstage heute</div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="text-sm text-zinc-500 dark:text-zinc-400">Geburtstage heute</div>
           <div className="mt-1 text-4xl font-semibold">{birthdaysToday}</div>
         </div>
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border p-5">
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
           <h2 className="text-lg font-medium">Schnellstart</h2>
           <ol className="mt-3 list-decimal pl-5 text-sm text-zinc-700 dark:text-zinc-300 space-y-2">
             <li>Excel-Vorlage laden und Mitarbeiterdaten befüllen.</li>
@@ -56,11 +56,21 @@ export default async function Home() {
             <li>Einstellungen (Manager-Verteiler, E-Mail-Templates) überprüfen.</li>
           </ol>
           <div className="mt-4 flex flex-wrap gap-3">
-            <a href="/api/template" className="rounded border px-4 py-2">Excel-Vorlage</a>
-            <Link href="/employees" className="rounded border px-4 py-2">Zu Employees</Link>
+            <a
+              href="/api/template"
+              className="rounded border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              Excel-Vorlage
+            </a>
+            <Link
+              href="/employees"
+              className="rounded border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              Zu Employees
+            </Link>
           </div>
         </div>
-        <div className="rounded-xl border p-5">
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
           <h2 className="text-lg font-medium">Tipps</h2>
           <ul className="mt-3 list-disc pl-5 text-sm text-zinc-700 dark:text-zinc-300 space-y-2">
             <li>Felder/Datensätze sperren, um Überschreiben durch Re-Import zu verhindern.</li>
