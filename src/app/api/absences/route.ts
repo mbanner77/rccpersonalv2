@@ -68,6 +68,10 @@ function ensureDateOrder(start: Date, end: Date) {
   }
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof Date);
+}
+
 function canManageAbsence(user: SessionUser, absence: Prisma.AbsenceGetPayload<{ include: typeof absenceInclude }> | { unitId: string | null; employee: { unitId: string | null; id: string }; createdById: string | null }): boolean {
   if (elevatedRoles.includes(user.role)) return true;
   if (leadRoles.includes(user.role) && user.unitId) {
@@ -127,7 +131,12 @@ export async function GET(req: Request) {
     if (Number.isNaN(endDate.getTime())) {
       return Response.json({ error: "Invalid end date" }, { status: 400 });
     }
-    where.startDate = { ...(where.startDate ?? {}), lte: endDate };
+    const startDateFilter: Prisma.DateTimeFilter = {};
+    if (isPlainObject(where.startDate)) {
+      Object.assign(startDateFilter, where.startDate as Prisma.DateTimeFilter);
+    }
+    startDateFilter.lte = endDate;
+    where.startDate = startDateFilter;
   }
   if (status) where.status = status;
   if (employeeId) where.employeeId = employeeId;
