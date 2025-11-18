@@ -5,8 +5,9 @@ import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import LogoutButton from "@/components/LogoutButton";
 import { useSession } from "@/hooks/useSession";
+import type { SessionRole } from "@/types/auth";
 
-const NAV_LINKS: { href: string; label: string; roles?: Array<"ADMIN" | "UNIT_LEAD"> }[] = [
+const NAV_LINKS: { href: string; label: string; roles?: Array<SessionRole> }[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/employees", label: "Employees" },
   { href: "/settings", label: "Settings", roles: ["ADMIN"] },
