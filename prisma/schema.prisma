@@ -27,6 +27,8 @@ model TaskTemplate {
   updatedAt       DateTime  @updatedAt
 
   assignments     TaskAssignment[]
+
+  @@unique([title, type])
 }
 
 model TaskAssignment {
@@ -49,6 +51,7 @@ model TaskAssignment {
   accesses Access[] @relation("AssignmentAccesses")
 
   @@index([employeeId, status, dueDate])
+  @@unique([employeeId, taskTemplateId])
 }
 
 model Asset {
@@ -90,7 +93,7 @@ model EmployeeDocument {
   docType      String
   url          String?
   storageKey   String?
-  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  uploadedBy   User?    @relation("EmployeeDocumentUploadedBy", fields: [uploadedById], references: [id])
   uploadedById String?
   createdAt    DateTime @default(now())
 }
@@ -127,6 +130,7 @@ model Employee {
   lifecycleTasks TaskAssignment[]
   assets         Asset[]              @relation("EmployeeAssets")
   accesses       Access[]             @relation("EmployeeAccesses")
+  documents      EmployeeDocument[]
   lockAll        Boolean              @default(false)
   lockFirstName  Boolean              @default(false)
   lockLastName   Boolean              @default(false)
@@ -309,6 +313,7 @@ model User {
   sessions         Session[]
   absencesCreated  Absence[] @relation("AbsenceCreatedBy")
   absencesApproved Absence[] @relation("AbsenceApprovedBy")
+  documentsUploaded EmployeeDocument[] @relation("EmployeeDocumentUploadedBy")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
