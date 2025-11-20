@@ -66,7 +66,25 @@ SQL
   log "Re-running migrate deploy after baseline."
   npx prisma migrate deploy || {
     log "Migrate deploy failed after baseline recovery."
-    exit 1
+    # As a Render-only fallback, generate a runtime migration from current DB to schema and apply it.
+    log "Attempting runtime migration via prisma migrate diff (Render-only fallback)."
+    ts=$(date +%Y%m%d%H%M%S)
+    rt_dir="prisma/migrations/${ts}_render_runtime"
+    mkdir -p "$rt_dir"
+    npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script > "$rt_dir/migration.sql" || {
+      log "Runtime diff failed. Aborting."
+      exit 1
+    }
+    if [ ! -s "$rt_dir/migration.sql" ]; then
+      log "No diff produced; nothing to migrate."
+    else
+      log "Applying runtime migration and marking as applied."
+      npx prisma migrate resolve --applied "$(basename "$rt_dir")" || true
+      npx prisma migrate deploy || {
+        log "Migrate deploy failed after runtime diff."
+        exit 1
+      }
+    fi
   }
   run_seed || {
     log "Prisma seed failed after baseline recovery."

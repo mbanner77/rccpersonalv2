@@ -2,6 +2,99 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// --- HR On/Offboarding ---
+
+enum TaskType {
+  ONBOARDING
+  OFFBOARDING
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+  BLOCKED
+}
+
+model TaskTemplate {
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  type            TaskType
+  ownerRole       UserRole
+  relativeDueDays Int       // relative to startDate/exitDate depending on type
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  assignments     TaskAssignment[]
+}
+
+model TaskAssignment {
+  id             String        @id @default(cuid())
+  employee       Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId     String
+  template       TaskTemplate  @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
+  taskTemplateId String
+  type           TaskType
+  status         TaskStatus    @default(OPEN)
+  dueDate        DateTime
+  ownerRole      UserRole
+  notes          String?
+  completedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // optional links for asset/access fulfillment
+  assets   Asset[]  @relation("AssignmentAssets")
+  accesses Access[] @relation("AssignmentAccesses")
+
+  @@index([employeeId, status, dueDate])
+}
+
+model Asset {
+  id                 String           @id @default(cuid())
+  name               String
+  serial             String?
+  // either assigned directly to employee, or linked via task assignment
+  assignedToEmployee Employee?        @relation("EmployeeAssets", fields: [assignedToEmployeeId], references: [id])
+  assignedToEmployeeId String?
+  assignment         TaskAssignment?  @relation("AssignmentAssets", fields: [assignmentId], references: [id])
+  assignmentId       String?
+  notes              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([assignedToEmployeeId])
+}
+
+model Access {
+  id                 String           @id @default(cuid())
+  system             String
+  account            String?
+  assignedToEmployee Employee?        @relation("EmployeeAccesses", fields: [assignedToEmployeeId], references: [id])
+  assignedToEmployeeId String?
+  assignment         TaskAssignment?  @relation("AssignmentAccesses", fields: [assignmentId], references: [id])
+  assignmentId       String?
+  notes              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([assignedToEmployeeId])
+}
+
+model EmployeeDocument {
+  id           String   @id @default(cuid())
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId   String
+  title        String
+  docType      String
+  url          String?
+  storageKey   String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  uploadedById String?
+  createdAt    DateTime @default(now())
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -31,6 +124,9 @@ model Employee {
   locationId     String?
   assignments    EmployeeAssignment[]
   absences       Absence[]
+  lifecycleTasks TaskAssignment[]
+  assets         Asset[]              @relation("EmployeeAssets")
+  accesses       Access[]             @relation("EmployeeAccesses")
   lockAll        Boolean              @default(false)
   lockFirstName  Boolean              @default(false)
   lockLastName   Boolean              @default(false)
@@ -228,6 +324,8 @@ model Session {
 
 enum EmployeeStatus {
   ACTIVE
+  ONBOARDING
+  OFFBOARDING
   EXITED
 }
 
