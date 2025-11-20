@@ -33,14 +33,36 @@ fi
 
 if printf '%s' "$OUTPUT" | grep -q 'P3005'; then
   log "Existing schema detected without migration history. Applying baseline..."
-  if [ -d prisma/migrations ]; then
-    for path in prisma/migrations/*/; do
-      [ -d "$path" ] || continue
-      dir=$(basename "$path")
-      log "Marking migration $dir as applied."
-      npx prisma migrate resolve --applied "$dir"
-    done
+  if [ ! -d prisma/migrations ]; then
+    mkdir -p prisma/migrations
   fi
+
+  # If there are no migration subfolders, create a baseline one on-the-fly
+  has_migrations=false
+  for path in prisma/migrations/*/; do
+    if [ -d "$path" ]; then
+      has_migrations=true
+      break
+    fi
+  done
+
+  if [ "$has_migrations" = false ]; then
+    base_dir="prisma/migrations/00000000000000_baseline"
+    log "No migrations present in repo. Creating on-the-fly baseline at $base_dir."
+    mkdir -p "$base_dir"
+    cat > "$base_dir/migration.sql" <<'SQL'
+-- Baseline created at runtime on Render. The production database already has schema.
+-- This marks the initial state as applied to establish migration history.
+SQL
+  fi
+
+  # Mark all present migrations as applied
+  for path in prisma/migrations/*/; do
+    [ -d "$path" ] || continue
+    dir=$(basename "$path")
+    log "Marking migration $dir as applied."
+    npx prisma migrate resolve --applied "$dir"
+  done
   log "Re-running migrate deploy after baseline."
   npx prisma migrate deploy || {
     log "Migrate deploy failed after baseline recovery."
