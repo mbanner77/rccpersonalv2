@@ -6,6 +6,7 @@ const TaskTypeValues = ["ONBOARDING", "OFFBOARDING"] as const;
 const TaskStatusValues = ["OPEN", "DONE", "BLOCKED"] as const;
 
 const querySchema = z.object({
+  id: z.string().cuid().optional(),
   type: z.enum(TaskTypeValues).optional(),
   status: z.enum(TaskStatusValues).optional(),
   employeeId: z.string().cuid().optional(),
@@ -22,9 +23,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
   if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { type, status, employeeId } = parsed.data;
-
+  const { id, type, status, employeeId } = parsed.data;
   const where: any = {};
+  if (id) where.id = id;
   if (type) where.type = type;
   if (status) where.status = status;
   if (employeeId) where.employeeId = employeeId;
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
       template: { select: { id: true, title: true, ownerRole: true, type: true } },
     },
   });
-  return Response.json(tasks);
+  return Response.json(id ? (tasks[0] ?? null) : tasks);
 }
 
 export async function PATCH(req: Request) {

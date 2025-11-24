@@ -37,7 +37,7 @@ export async function GET() {
     }
   }
 
-  // Managers
+  // Managers - Jubilee digest
   const managerEmails = parseList(settings?.managerEmails ?? "");
   let managerSent = 0;
   if (managerEmails.length && jubileeHits.length) {
@@ -52,5 +52,30 @@ export async function GET() {
     managerSent = managerEmails.length;
   }
 
-  return Response.json({ birthdays: birthdaySent, jubileeHits: jubileeHits.length, managersNotified: managerSent });
+  // Lifecycle tasks digest (OPEN and due today or overdue)
+  let lifecycleSent = 0;
+  if (managerEmails.length) {
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const tasks = await (db as any)["taskAssignment"].findMany({
+      where: { status: "OPEN", dueDate: { lte: startOfDay } },
+      orderBy: [{ dueDate: "asc" }],
+      include: {
+        employee: { select: { firstName: true, lastName: true } },
+        template: { select: { title: true, type: true, ownerRole: true } },
+      },
+    });
+    if (tasks.length) {
+      const rows = tasks
+        .map((t: any) => {
+          const d = new Date(t.dueDate);
+          return `${d.toLocaleDateString()}: [${t.template.type}] ${t.template.title} 	 ${t.employee.lastName}, ${t.employee.firstName}`;
+        })
+        .join("<br>");
+      const html = `<div><strong>Fällige Lifecycle-Aufgaben</strong></div><div style="margin-top:8px">${rows}</div>`;
+      await sendMail({ to: managerEmails, subject: "Fällige Lifecycle-Aufgaben", html });
+      lifecycleSent = managerEmails.length;
+    }
+  }
+
+  return Response.json({ birthdays: birthdaySent, jubileeHits: jubileeHits.length, managersNotified: managerSent, lifecycleNotified: lifecycleSent });
 }
