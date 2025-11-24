@@ -16,71 +16,71 @@ enum TaskStatus {
 }
 
 model TaskTemplate {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   title           String
   description     String?
   type            TaskType
   ownerRole       UserRole
-  relativeDueDays Int       // relative to startDate/exitDate depending on type
-  active          Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  relativeDueDays Int // relative to startDate/exitDate depending on type
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  assignments     TaskAssignment[]
+  assignments TaskAssignment[]
 
   @@unique([title, type])
 }
 
 model TaskAssignment {
-  id             String        @id @default(cuid())
-  employee       Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId     String
-  template       TaskTemplate  @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
+  template       TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
   taskTemplateId String
   type           TaskType
-  status         TaskStatus    @default(OPEN)
+  status         TaskStatus   @default(OPEN)
   dueDate        DateTime
   ownerRole      UserRole
   notes          String?
   completedAt    DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   // optional links for asset/access fulfillment
   assets   Asset[]  @relation("AssignmentAssets")
   accesses Access[] @relation("AssignmentAccesses")
 
-  @@index([employeeId, status, dueDate])
   @@unique([employeeId, taskTemplateId])
+  @@index([employeeId, status, dueDate])
 }
 
 model Asset {
-  id                 String           @id @default(cuid())
-  name               String
-  serial             String?
+  id                   String          @id @default(cuid())
+  name                 String
+  serial               String?
   // either assigned directly to employee, or linked via task assignment
-  assignedToEmployee Employee?        @relation("EmployeeAssets", fields: [assignedToEmployeeId], references: [id])
+  assignedToEmployee   Employee?       @relation("EmployeeAssets", fields: [assignedToEmployeeId], references: [id])
   assignedToEmployeeId String?
-  assignment         TaskAssignment?  @relation("AssignmentAssets", fields: [assignmentId], references: [id])
-  assignmentId       String?
-  notes              String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  assignment           TaskAssignment? @relation("AssignmentAssets", fields: [assignmentId], references: [id])
+  assignmentId         String?
+  notes                String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
   @@index([assignedToEmployeeId])
 }
 
 model Access {
-  id                 String           @id @default(cuid())
-  system             String
-  account            String?
-  assignedToEmployee Employee?        @relation("EmployeeAccesses", fields: [assignedToEmployeeId], references: [id])
+  id                   String          @id @default(cuid())
+  system               String
+  account              String?
+  assignedToEmployee   Employee?       @relation("EmployeeAccesses", fields: [assignedToEmployeeId], references: [id])
   assignedToEmployeeId String?
-  assignment         TaskAssignment?  @relation("AssignmentAccesses", fields: [assignmentId], references: [id])
-  assignmentId       String?
-  notes              String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  assignment           TaskAssignment? @relation("AssignmentAccesses", fields: [assignmentId], references: [id])
+  assignmentId         String?
+  notes                String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
   @@index([assignedToEmployeeId])
 }
@@ -104,41 +104,42 @@ datasource db {
 }
 
 model Employee {
-  id             String               @id @default(cuid())
-  firstName      String
-  lastName       String
-  startDate      DateTime
-  birthDate      DateTime
-  email          String?              @unique
-  status         EmployeeStatus       @default(ACTIVE)
-  exitDate       DateTime?
-  jobTitle       String?
-  contractType   ContractType?        @default(PERMANENT)
-  employmentType EmploymentType?      @default(FULL_TIME)
-  weeklyHours    Int?                 @default(40)
-  remoteQuota    Int?                 @default(0)
-  unit           Unit?                @relation(fields: [unitId], references: [id])
-  unitId         String?
-  department     Department?          @relation(fields: [departmentId], references: [id])
-  departmentId   String?
-  team           Team?                @relation(fields: [teamId], references: [id])
-  teamId         String?
-  location       Location?            @relation(fields: [locationId], references: [id])
-  locationId     String?
-  assignments    EmployeeAssignment[]
-  absences       Absence[]
-  lifecycleTasks TaskAssignment[]
-  assets         Asset[]              @relation("EmployeeAssets")
-  accesses       Access[]             @relation("EmployeeAccesses")
-  documents      EmployeeDocument[]
-  lockAll        Boolean              @default(false)
-  lockFirstName  Boolean              @default(false)
-  lockLastName   Boolean              @default(false)
-  lockStartDate  Boolean              @default(false)
-  lockBirthDate  Boolean              @default(false)
-  lockEmail      Boolean              @default(false)
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id                 String               @id @default(cuid())
+  firstName          String
+  lastName           String
+  startDate          DateTime
+  birthDate          DateTime
+  email              String?              @unique
+  status             EmployeeStatus       @default(ACTIVE)
+  exitDate           DateTime?
+  jobTitle           String?
+  contractType       ContractType?        @default(PERMANENT)
+  employmentType     EmploymentType?      @default(FULL_TIME)
+  weeklyHours        Int?                 @default(40)
+  remoteQuota        Int?                 @default(0)
+  unit               Unit?                @relation(fields: [unitId], references: [id])
+  unitId             String?
+  department         Department?          @relation(fields: [departmentId], references: [id])
+  departmentId       String?
+  team               Team?                @relation(fields: [teamId], references: [id])
+  teamId             String?
+  location           Location?            @relation(fields: [locationId], references: [id])
+  locationId         String?
+  assignments        EmployeeAssignment[]
+  absences           Absence[]
+  lifecycleProcesses LifecycleProcess[]
+  lifecycleTasks     TaskAssignment[]
+  assets             Asset[]              @relation("EmployeeAssets")
+  accesses           Access[]             @relation("EmployeeAccesses")
+  documents          EmployeeDocument[]
+  lockAll            Boolean              @default(false)
+  lockFirstName      Boolean              @default(false)
+  lockLastName       Boolean              @default(false)
+  lockStartDate      Boolean              @default(false)
+  lockBirthDate      Boolean              @default(false)
+  lockEmail          Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 
   @@unique([firstName, lastName, birthDate])
 }
@@ -303,19 +304,20 @@ enum AbsenceStatus {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  name             String?
-  passwordHash     String
-  role             UserRole  @default(UNIT_LEAD)
-  unit             Unit?     @relation(fields: [unitId], references: [id])
-  unitId           String?
-  sessions         Session[]
-  absencesCreated  Absence[] @relation("AbsenceCreatedBy")
-  absencesApproved Absence[] @relation("AbsenceApprovedBy")
-  documentsUploaded EmployeeDocument[] @relation("EmployeeDocumentUploadedBy")
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                      String             @id @default(cuid())
+  email                   String             @unique
+  name                    String?
+  passwordHash            String
+  role                    UserRole           @default(UNIT_LEAD)
+  unit                    Unit?              @relation(fields: [unitId], references: [id])
+  unitId                  String?
+  sessions                Session[]
+  absencesCreated         Absence[]          @relation("AbsenceCreatedBy")
+  absencesApproved        Absence[]          @relation("AbsenceApprovedBy")
+  documentsUploaded       EmployeeDocument[] @relation("EmployeeDocumentUploadedBy")
+  completedLifecycleTasks LifecycleTask[]    @relation("LifecycleTaskCompletedBy")
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
 }
 
 model Session {
@@ -386,44 +388,45 @@ enum LifecycleTaskStatus {
 }
 
 model LifecycleTemplate {
-  id          String                 @id @default(cuid())
+  id          String                  @id @default(cuid())
   title       String
   type        LifecycleType
   description String?
-  active      Boolean                @default(true)
+  active      Boolean                 @default(true)
   tasks       LifecycleTaskTemplate[]
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
+  processes   LifecycleProcess[]
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
 
   @@unique([title, type])
 }
 
 model LifecycleTaskTemplate {
-  id            String               @id @default(cuid())
-  template      LifecycleTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  templateId    String
-  title         String
-  description   String?
-  ownerRole     LifecycleOwnerRole
-  relativeDays  Int                  // relative due date offset from start (onboarding) or exit (offboarding)
-  orderIndex    Int                  @default(0)
+  id           String             @id @default(cuid())
+  template     LifecycleTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId   String
+  title        String
+  description  String?
+  ownerRole    LifecycleOwnerRole
+  relativeDays Int // relative due date offset from start (onboarding) or exit (offboarding)
+  orderIndex   Int                @default(0)
 }
 
 model LifecycleProcess {
-  id            String          @id @default(cuid())
-  employee      Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId    String
-  template      LifecycleTemplate @relation(fields: [templateId], references: [id])
-  templateId    String
-  type          LifecycleType
-  startedAt     DateTime         @default(now())
-  closedAt      DateTime?
-  tasks         LifecycleTask[]
+  id         String            @id @default(cuid())
+  employee   Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
+  template   LifecycleTemplate @relation(fields: [templateId], references: [id])
+  templateId String
+  type       LifecycleType
+  startedAt  DateTime          @default(now())
+  closedAt   DateTime?
+  tasks      LifecycleTask[]
 }
 
 model LifecycleTask {
-  id            String          @id @default(cuid())
-  process       LifecycleProcess @relation(fields: [processId], references: [id], onDelete: Cascade)
+  id            String              @id @default(cuid())
+  process       LifecycleProcess    @relation(fields: [processId], references: [id], onDelete: Cascade)
   processId     String
   title         String
   description   String?
@@ -431,10 +434,10 @@ model LifecycleTask {
   status        LifecycleTaskStatus @default(OPEN)
   dueDate       DateTime?
   completedAt   DateTime?
-  completedBy   User?            @relation(fields: [completedById], references: [id])
+  completedBy   User?               @relation("LifecycleTaskCompletedBy", fields: [completedById], references: [id])
   completedById String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@index([processId])
 }
