@@ -28,7 +28,7 @@ export default function AppHeader() {
     : [];
 
   return (
-    <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
+    <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
       <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
         <Image
           src="https://realcore.info/bilder/rc-logo.png"
@@ -40,10 +40,10 @@ export default function AppHeader() {
         />
         <span className="hidden sm:inline">Anniversaries</span>
       </Link>
-      <div className="flex items-center gap-6 text-sm">
-        <nav className="flex items-center gap-4">
+      <div className="flex flex-1 flex-wrap items-center justify-end gap-4 text-sm sm:flex-nowrap">
+        <nav className="flex basis-full flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:basis-auto sm:justify-start lg:justify-end">
           {visibleLinks.map((link) => (
-            <Link key={link.href} className="hover:underline" href={link.href}>
+            <Link key={link.href} className="whitespace-nowrap hover:underline" href={link.href}>
               {link.label}
             </Link>
           ))}
