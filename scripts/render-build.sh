@@ -80,6 +80,17 @@ if [ -n "${DATABASE_URL:-}" ]; then
       mkdir -p "$rt_dir"
       npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script > "$rt_dir/migration.sql" || {
         log "Runtime diff failed. Aborting build."; exit 1; }
+      # Sanitize legacy enum/type statements that may not exist anymore
+      if [ -s "$rt_dir/migration.sql" ]; then
+        sed -i.bak \
+          -e '/CREATE TYPE\s\+"\?TaskStatus\"\?/Id' \
+          -e '/DROP TYPE\s\+"\?TaskStatus\"\?/Id' \
+          -e '/ALTER TYPE\s\+"\?TaskStatus\"\?/Id' \
+          -e 's/\bTaskStatus\b/TEXT/Ig' \
+          -e '/ADD COLUMN\s\+"status"\s\+TEXT/Id' \
+          "$rt_dir/migration.sql" || true
+        rm -f "$rt_dir/migration.sql.bak"
+      fi
       if [ ! -s "$rt_dir/migration.sql" ]; then
         log "No diff produced; continuing."
       else
@@ -126,6 +137,17 @@ if [ -n "${DATABASE_URL:-}" ]; then
   rt_dir2="prisma/migrations/${ts2}_render_runtime_sync"
   mkdir -p "$rt_dir2"
   npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script > "$rt_dir2/migration.sql" || true
+  # Sanitize legacy enum/type statements in sync migration as well
+  if [ -s "$rt_dir2/migration.sql" ]; then
+    sed -i.bak \
+      -e '/CREATE TYPE\s\+"\?TaskStatus\"\?/Id' \
+      -e '/DROP TYPE\s\+"\?TaskStatus\"\?/Id' \
+      -e '/ALTER TYPE\s\+"\?TaskStatus\"\?/Id' \
+      -e 's/\bTaskStatus\b/TEXT/Ig' \
+      -e '/ADD COLUMN\s\+"status"\s\+TEXT/Id' \
+      "$rt_dir2/migration.sql" || true
+    rm -f "$rt_dir2/migration.sql.bak"
+  fi
   if [ -s "$rt_dir2/migration.sql" ]; then
     log "Additional schema changes found; applying runtime sync migration."
     npx prisma migrate deploy || { log "migrate deploy failed after runtime sync."; exit 1; }
