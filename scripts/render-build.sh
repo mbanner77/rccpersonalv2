@@ -88,6 +88,13 @@ if [ -n "${DATABASE_URL:-}" ]; then
           -e '/ALTER TYPE\s\+"\?TaskStatus\"\?/Id' \
           -e 's/\bTaskStatus\b/TEXT/Ig' \
           -e '/ADD COLUMN\s\+"status"\s\+TEXT/Id' \
+          -e '/CREATE TYPE\s\+"\?LifecycleOwnerRole\"\?/Id' \
+          -e '/DROP TYPE\s\+"\?LifecycleOwnerRole\"\?/Id' \
+          -e '/ALTER TYPE\s\+"\?LifecycleOwnerRole\"\?/Id' \
+          -e 's/\bLifecycleOwnerRole\b/TEXT/Ig' \
+          -e '/ADD COLUMN\s\+"ownerRole"\s\+LifecycleOwnerRole/Id' \
+          -e '/ADD COLUMN\s\+"ownerRole"\s\+TEXT/Id' \
+          -e '/DROP COLUMN\s\+"ownerRole"/Id' \
           "$rt_dir/migration.sql" || true
         rm -f "$rt_dir/migration.sql.bak"
       fi
@@ -145,6 +152,13 @@ if [ -n "${DATABASE_URL:-}" ]; then
       -e '/ALTER TYPE\s\+"\?TaskStatus\"\?/Id' \
       -e 's/\bTaskStatus\b/TEXT/Ig' \
       -e '/ADD COLUMN\s\+"status"\s\+TEXT/Id' \
+      -e '/CREATE TYPE\s\+"\?LifecycleOwnerRole\"\?/Id' \
+      -e '/DROP TYPE\s\+"\?LifecycleOwnerRole\"\?/Id' \
+      -e '/ALTER TYPE\s\+"\?LifecycleOwnerRole\"\?/Id' \
+      -e 's/\bLifecycleOwnerRole\b/TEXT/Ig' \
+      -e '/ADD COLUMN\s\+"ownerRole"\s\+LifecycleOwnerRole/Id' \
+      -e '/ADD COLUMN\s\+"ownerRole"\s\+TEXT/Id' \
+      -e '/DROP COLUMN\s\+"ownerRole"/Id' \
       "$rt_dir2/migration.sql" || true
     rm -f "$rt_dir2/migration.sql.bak"
   fi
