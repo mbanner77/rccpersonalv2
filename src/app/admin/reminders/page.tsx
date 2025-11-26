@@ -150,6 +150,15 @@ export default function RemindersPage() {
   async function submit() {
     setSaving(true);
     try {
+      // Parse semicolon-separated emails into individual recipient entries
+      const allRecipients: Recipient[] = [];
+      form.recipients.forEach((r) => {
+        const emails = r.email.split(/[;,]/).map((e) => e.trim()).filter(Boolean);
+        emails.forEach((email) => allRecipients.push({ email, orderIndex: allRecipients.length }));
+      });
+      if (allRecipients.length === 0) {
+        throw new Error("Mindestens ein Empfänger erforderlich");
+      }
       const payload = {
         ...(form.id ? { id: form.id } : {}),
         type: form.type,
@@ -158,7 +167,7 @@ export default function RemindersPage() {
         dueDate: new Date(form.dueDate),
         active: form.active,
         schedules: form.schedules.map((s, i) => ({ label: s.label.trim(), daysBefore: s.daysBefore | 0, timeOfDay: s.timeOfDay?.trim() || undefined, orderIndex: s.orderIndex ?? i })),
-        recipients: form.recipients.map((r, i) => ({ email: r.email.trim(), orderIndex: r.orderIndex ?? i })),
+        recipients: allRecipients,
       };
       const method = form.id ? "PATCH" : "POST";
       const res = await fetch("/api/admin/reminders", { method, headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
