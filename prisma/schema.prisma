@@ -9,29 +9,13 @@ enum TaskType {
   OFFBOARDING
 }
 
-// Legacy enums retained to prevent Render db push from dropping existing columns before migrations run
-enum LifecycleOwnerRole {
-  ADMIN
-  HR
-  IT
-  UNIT_LEAD
-  TEAM_LEAD
-  PEOPLE_MANAGER
-}
-
-enum TaskStatus {
-  OPEN
-  DONE
-  BLOCKED
-}
-
 model TaskTemplate {
   id              String        @id @default(cuid())
   title           String
   description     String?
   type            TaskType
   // Legacy column to satisfy db push in environments that still have it
-  ownerRole       LifecycleOwnerRole?
+  ownerRole       String?
   // New relational role; renamed field to avoid name clash with legacy column
   role            LifecycleRole? @relation("LifecycleRoleTaskTemplates", fields: [ownerRoleId], references: [id])
   ownerRoleId     String?
