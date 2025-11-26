@@ -17,10 +17,22 @@ function formatDate(d: Date) {
   return d.toLocaleDateString("de-DE");
 }
 
-export async function POST() {
-  // Limit to ADMIN for now; could also add CRON secret later if needed
-  const user = await requireUser();
-  if (!hasRole(user, "ADMIN")) return new Response("Forbidden", { status: 403 });
+export async function POST(req: Request) {
+  // Allow either ADMIN session or CRON secret header
+  const secret = process.env.CRON_SECRET;
+  const header = req.headers.get("x-cron-secret");
+  let allowed = false;
+  if (secret && header && header === secret) {
+    allowed = true;
+  } else {
+    try {
+      const user = await requireUser();
+      allowed = hasRole(user, "ADMIN");
+    } catch {
+      allowed = false;
+    }
+  }
+  if (!allowed) return new Response("Forbidden", { status: 403 });
 
   const today = new Date();
   const dayStart = startOfDay(today);
