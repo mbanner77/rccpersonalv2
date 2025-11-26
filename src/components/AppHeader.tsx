@@ -39,7 +39,7 @@ export default function AppHeader() {
           unoptimized
           className="h-6 w-auto object-contain"
         />
-        <span className="hidden sm:inline">Anniversaries</span>
+        <span className="hidden sm:inline">HR-Modul</span>
       </Link>
       <div className="flex flex-1 items-center justify-end gap-3 text-sm">
         <nav className="flex flex-1 flex-nowrap items-center justify-end gap-x-3 overflow-x-auto whitespace-nowrap">

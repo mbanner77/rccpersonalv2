@@ -5,8 +5,8 @@ import "@/lib/dev-cron";
 import AppHeader from "@/components/AppHeader";
 
 export const metadata: Metadata = {
-  title: "realcore • Anniversaries",
-  description: "Jubiläen, Mitarbeiterverwaltung und Import",
+  title: "realcore • HR-Modul",
+  description: "HR-Modul für Mitarbeiterverwaltung, Onboarding und Offboarding",
   icons: {
     icon: "https://realcore.info/bilder/favicon.png",
   },

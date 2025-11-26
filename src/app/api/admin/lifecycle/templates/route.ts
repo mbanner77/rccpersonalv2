@@ -31,8 +31,10 @@ export async function GET() {
   try {
     const user = await requireUser();
     ensureAdmin(user);
-    // Try with role include first, fall back to simple query if relation doesn't exist
+    
+    // Check if taskTemplate table exists
     try {
+      // Try with role include first
       const templates = await (db as any)["taskTemplate"].findMany({
         orderBy: [{ type: "asc" }, { title: "asc" }],
         include: { role: { select: { id: true, key: true, label: true } } },
@@ -40,19 +42,31 @@ export async function GET() {
       // Transform to rename 'role' to 'ownerRole' for frontend compatibility
       const transformed = templates.map((t: Record<string, unknown>) => {
         const { role, ...rest } = t;
-        return { ...rest, ownerRole: role };
+        return { ...rest, ownerRole: role ?? { id: "", key: "", label: "—" } };
       });
       return Response.json(transformed);
     } catch {
       // Relation might not exist yet, try without include
-      const templates = await (db as any)["taskTemplate"].findMany({
-        orderBy: [{ type: "asc" }, { title: "asc" }],
-      });
-      return Response.json(templates);
+      try {
+        const templates = await (db as any)["taskTemplate"].findMany({
+          orderBy: [{ type: "asc" }, { title: "asc" }],
+        });
+        // Add placeholder ownerRole for templates without relation
+        const transformed = templates.map((t: Record<string, unknown>) => ({
+          ...t,
+          ownerRole: { id: "", key: "", label: "—" },
+        }));
+        return Response.json(transformed);
+      } catch {
+        // Table doesn't exist at all
+        return Response.json([]);
+      }
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown error";
-    if (/does not exist|relation|column|undefined/i.test(msg)) return Response.json([]);
+    if (/does not exist|relation|column|undefined|null|Cannot read/i.test(msg)) {
+      return Response.json([]);
+    }
     return Response.json({ error: msg }, { status: 500 });
   }
 }
