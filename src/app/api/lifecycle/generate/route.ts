@@ -41,6 +41,20 @@ export async function POST(req: Request) {
     select: { id: true, relativeDueDays: true, ownerRoleId: true },
   });
 
+  // Get the default "OPEN" status dynamically
+  let defaultStatus = await (db as any)["lifecycleStatus"].findFirst({
+    where: { OR: [{ key: "OPEN" }, { isDefault: true }] },
+    select: { id: true },
+  });
+  if (!defaultStatus) {
+    // Create default status if not exists
+    defaultStatus = await (db as any)["lifecycleStatus"].create({
+      data: { key: "OPEN", label: "Offen", description: "Aufgabe wurde noch nicht begonnen", isDone: false, isDefault: true, orderIndex: 0 },
+      select: { id: true },
+    });
+  }
+  const openStatusId = defaultStatus.id;
+
   const results: any[] = [];
   for (const tpl of templates) {
     const due = new Date(anchorDate);
@@ -50,18 +64,18 @@ export async function POST(req: Request) {
       // upsert: set status back to OPEN and update dueDate/ownerRole
       const up = await (db as any)["taskAssignment"].upsert({
         where: { employeeId_taskTemplateId: { employeeId, taskTemplateId: tpl.id } },
-        update: { type, dueDate: due, ownerRoleId: tpl.ownerRoleId, statusId: "status_OPEN" },
-        create: { employeeId, taskTemplateId: tpl.id, type, dueDate: due, ownerRoleId: tpl.ownerRoleId, statusId: "status_OPEN" },
+        update: { type, dueDate: due, ownerRoleId: tpl.ownerRoleId, statusId: openStatusId },
+        create: { employeeId, taskTemplateId: tpl.id, type, dueDate: due, ownerRoleId: tpl.ownerRoleId, statusId: openStatusId },
       });
       results.push(up);
     } else {
       // create if not exists, ignore on conflict
       try {
         const created = await (db as any)["taskAssignment"].create({
-          data: { employeeId, taskTemplateId: tpl.id, type, dueDate: due, ownerRoleId: tpl.ownerRoleId, statusId: "status_OPEN" },
+          data: { employeeId, taskTemplateId: tpl.id, type, dueDate: due, ownerRoleId: tpl.ownerRoleId, statusId: openStatusId },
         });
         results.push(created);
-      } catch (e: any) {
+      } catch {
         // likely unique violation -> skip
       }
     }

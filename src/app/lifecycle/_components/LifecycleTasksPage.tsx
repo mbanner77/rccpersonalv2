@@ -5,6 +5,7 @@ import Link from "next/link";
 
 type Status = { id: string; key: string; label: string; isDone: boolean };
 type Role = { id: string; key: string; label: string };
+type Employee = { id: string; firstName: string; lastName: string; email: string | null; startDate: string | null; exitDate: string | null };
 
 type Task = {
   id: string;
@@ -73,6 +74,47 @@ export default function LifecycleTasksPage({ taskType, title }: Props) {
   const [editDueDate, setEditDueDate] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [generating, setGenerating] = useState(false);
+  const [generateResult, setGenerateResult] = useState<string | null>(null);
+  const [showGeneratePanel, setShowGeneratePanel] = useState(false);
+
+  // Load employees for the generate panel
+  const loadEmployees = useCallback(async () => {
+    try {
+      const res = await fetch("/api/employees?limit=500");
+      if (res.ok) {
+        const data = await res.json();
+        setEmployees(data.data ?? data ?? []);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Generate tasks for an employee
+  const generateTasks = async () => {
+    if (!selectedEmployeeId) return;
+    setGenerating(true);
+    setGenerateResult(null);
+    try {
+      const res = await fetch("/api/lifecycle/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId: selectedEmployeeId, type: taskType }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error ?? "Fehler beim Generieren");
+      setGenerateResult(`${json.generated} Aufgaben erstellt`);
+      setSelectedEmployeeId("");
+      void load();
+    } catch (err) {
+      setGenerateResult(err instanceof Error ? err.message : "Fehler beim Generieren");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -98,6 +140,10 @@ export default function LifecycleTasksPage({ taskType, title }: Props) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (showGeneratePanel) void loadEmployees();
+  }, [showGeneratePanel, loadEmployees]);
 
   const statistics = useMemo(() => {
     const byStatus = new Map<string, number>();
@@ -207,6 +253,13 @@ export default function LifecycleTasksPage({ taskType, title }: Props) {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => setShowGeneratePanel(!showGeneratePanel)}
+            className="rounded bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
+          >
+            {showGeneratePanel ? "Schließen" : "Aufgaben generieren"}
+          </button>
+          <button
+            type="button"
             onClick={() => void load()}
             className="rounded border px-3 py-2 text-xs font-medium hover:bg-zinc-50"
             disabled={loading}
@@ -222,6 +275,57 @@ export default function LifecycleTasksPage({ taskType, title }: Props) {
           </button>
         </div>
       </div>
+
+      {showGeneratePanel && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-emerald-800">
+            {taskType === "ONBOARDING" ? "Onboarding" : "Offboarding"}-Aufgaben für Mitarbeiter generieren
+          </h3>
+          <p className="mb-4 text-xs text-emerald-700">
+            Wählen Sie einen Mitarbeiter aus, um basierend auf den aktiven Vorlagen automatisch Aufgaben zu erstellen.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-emerald-800">Mitarbeiter</span>
+              <select
+                className="min-w-[250px] rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                value={selectedEmployeeId}
+                onChange={(e) => setSelectedEmployeeId(e.target.value)}
+              >
+                <option value="">Bitte wählen…</option>
+                {employees
+                  .filter((emp) => taskType === "ONBOARDING" ? emp.startDate : emp.exitDate)
+                  .map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.lastName}, {emp.firstName}
+                      {emp.email ? ` (${emp.email})` : ""}
+                      {taskType === "ONBOARDING" && emp.startDate ? ` — Start: ${new Date(emp.startDate).toLocaleDateString()}` : ""}
+                      {taskType === "OFFBOARDING" && emp.exitDate ? ` — Austritt: ${new Date(emp.exitDate).toLocaleDateString()}` : ""}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={generateTasks}
+              disabled={!selectedEmployeeId || generating}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {generating ? "Generiere…" : "Aufgaben generieren"}
+            </button>
+          </div>
+          {generateResult && (
+            <div className="mt-3 rounded border border-emerald-300 bg-white px-3 py-2 text-sm text-emerald-800">
+              {generateResult}
+            </div>
+          )}
+          {employees.length === 0 && (
+            <div className="mt-3 text-xs text-emerald-700">
+              Lade Mitarbeiterliste…
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-3 rounded border border-zinc-200 bg-white p-3 text-xs md:grid-cols-3">
         <div className="rounded border border-zinc-100 bg-zinc-50 p-3">
