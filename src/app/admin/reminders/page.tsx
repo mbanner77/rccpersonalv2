@@ -343,13 +343,13 @@ export default function RemindersPage() {
                     Hinzufügen
                   </button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 overflow-visible">
                   {form.schedules.map((s, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <input className="flex-[3] rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="Bezeichnung" value={s.label} onChange={(e) => setForm((p) => { const list = p.schedules.slice(); list[i] = { ...list[i], label: e.target.value }; return { ...p, schedules: list }; })} />
-                      <input type="number" className="w-16 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="Tage" value={s.daysBefore} onChange={(e) => setForm((p) => { const list = p.schedules.slice(); list[i] = { ...list[i], daysBefore: Number(e.target.value) }; return { ...p, schedules: list }; })} />
-                      <input className="w-20 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="HH:mm" value={s.timeOfDay ?? ""} onChange={(e) => setForm((p) => { const list = p.schedules.slice(); list[i] = { ...list[i], timeOfDay: e.target.value || null }; return { ...p, schedules: list }; })} />
-                      <button className="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => setForm((p) => ({ ...p, schedules: p.schedules.filter((_, idx) => idx !== i) }))}>
+                      <input className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="Bezeichnung" value={s.label} onChange={(e) => setForm((p) => { const list = p.schedules.slice(); list[i] = { ...list[i], label: e.target.value }; return { ...p, schedules: list }; })} />
+                      <input type="number" className="w-14 flex-shrink-0 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="Tage" value={s.daysBefore} onChange={(e) => setForm((p) => { const list = p.schedules.slice(); list[i] = { ...list[i], daysBefore: Number(e.target.value) }; return { ...p, schedules: list }; })} />
+                      <input className="w-16 flex-shrink-0 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="HH:mm" value={s.timeOfDay ?? ""} onChange={(e) => setForm((p) => { const list = p.schedules.slice(); list[i] = { ...list[i], timeOfDay: e.target.value || null }; return { ...p, schedules: list }; })} />
+                      <button className="flex-shrink-0 rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => setForm((p) => ({ ...p, schedules: p.schedules.filter((_, idx) => idx !== i) }))}>
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
@@ -368,11 +368,11 @@ export default function RemindersPage() {
                     Hinzufügen
                   </button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 overflow-visible">
                   {form.recipients.map((r, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <input className="flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="E-Mail (mehrere per ; trennen)" value={r.email} onChange={(e) => setForm((p) => { const list = p.recipients.slice(); list[i] = { ...list[i], email: e.target.value }; return { ...p, recipients: list }; })} />
-                      <button className="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => setForm((p) => ({ ...p, recipients: p.recipients.filter((_, idx) => idx !== i) }))}>
+                      <input className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition focus:border-black focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="E-Mail (mehrere per ; trennen)" value={r.email} onChange={(e) => setForm((p) => { const list = p.recipients.slice(); list[i] = { ...list[i], email: e.target.value }; return { ...p, recipients: list }; })} />
+                      <button className="flex-shrink-0 rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => setForm((p) => ({ ...p, recipients: p.recipients.filter((_, idx) => idx !== i) }))}>
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>

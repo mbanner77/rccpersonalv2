@@ -348,11 +348,13 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
   ) : null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-zinc-950 border rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] overflow-hidden">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="text-lg font-semibold">Units verwalten</h3>
-          <button onClick={onClose} className="text-sm text-zinc-600 hover:text-zinc-900">Schließen</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
+          <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Units verwalten</h3>
+          <button onClick={onClose} className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
         <div className="p-0 overflow-y-auto">
           <div className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur border-b">

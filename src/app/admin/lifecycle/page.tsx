@@ -415,29 +415,29 @@ export default function AdminLifecyclePage() {
       )}
 
       {dialogMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {dialogMode === "create" ? "Neue Lifecycle-Vorlage" : `Vorlage \"${activeTemplate?.title}\" bearbeiten`}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                {dialogMode === "create" ? "Neue Lifecycle-Vorlage" : "Vorlage bearbeiten"}
               </h2>
-              <button type="button" onClick={closeDialog} className="text-sm text-zinc-500 hover:text-zinc-800">
-                Schließen
+              <button type="button" onClick={closeDialog} className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <div className="grid gap-4 text-sm md:grid-cols-2">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-600">Titel</span>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Titel</span>
                 <input
-                  className="rounded border px-3 py-2"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:focus:border-white dark:focus:ring-white/10"
                   value={form.title}
                   onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
                 />
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-600">Typ</span>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Typ</span>
                 <select
-                  className="rounded border px-3 py-2"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:focus:border-white dark:focus:ring-white/10"
                   value={form.type}
                   onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value as TemplateType }))}
                 >
@@ -445,10 +445,10 @@ export default function AdminLifecyclePage() {
                   <option value="OFFBOARDING">Offboarding</option>
                 </select>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-600">Owner-Rolle</span>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Owner-Rolle</span>
                 <select
-                  className="rounded border px-3 py-2"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:focus:border-white dark:focus:ring-white/10"
                   value={form.ownerRoleId}
                   onChange={(event) => setForm((prev) => ({ ...prev, ownerRoleId: event.target.value }))}
                 >
@@ -460,42 +460,43 @@ export default function AdminLifecyclePage() {
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-600">Relative Fälligkeit (Tage)</span>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Relative Fälligkeit (Tage)</span>
                 <input
                   type="number"
-                  className="rounded border px-3 py-2"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:focus:border-white dark:focus:ring-white/10"
                   value={form.relativeDueDays}
                   onChange={(event) => setForm((prev) => ({ ...prev, relativeDueDays: event.target.value }))}
                 />
               </label>
-              <label className="md:col-span-2 flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-600">Beschreibung</span>
+              <label className="md:col-span-2 flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Beschreibung</span>
                 <textarea
-                  className="min-h-[100px] rounded border px-3 py-2"
+                  className="min-h-[100px] rounded-lg border border-zinc-300 bg-white px-3 py-2.5 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:focus:border-white dark:focus:ring-white/10"
                   value={form.description}
                   onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
                   placeholder="Optional: detaillierte Beschreibung oder Checkliste"
                 />
               </label>
-              <label className="flex items-center gap-2 text-xs font-medium text-zinc-600">
+              <label className="col-span-2 flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800">
                 <input
                   type="checkbox"
+                  className="h-4 w-4 rounded border-zinc-300 text-black focus:ring-black dark:border-zinc-600 dark:bg-zinc-700"
                   checked={form.active}
                   onChange={(event) => setForm((prev) => ({ ...prev, active: event.target.checked }))}
                 />
-                Vorlage aktiv
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Vorlage aktiv</span>
               </label>
             </div>
             <div className="mt-6 flex items-center justify-end gap-3">
-              <button type="button" onClick={closeDialog} className="rounded border px-3 py-2 text-sm">
+              <button type="button" onClick={closeDialog} className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600">
                 Abbrechen
               </button>
               <button
                 type="button"
                 onClick={dialogMode === "create" ? submitCreate : submitUpdate}
                 disabled={saving}
-                className="rounded bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                className="rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
               >
                 {saving ? "Speichern…" : dialogMode === "create" ? "Anlegen" : "Speichern"}
               </button>
