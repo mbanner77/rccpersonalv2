@@ -39,6 +39,12 @@ if [ -n "${DATABASE_URL:-}" ]; then
         log "Resolving failed migration as rolled-back: $dir"
         npx prisma migrate resolve --rolled-back "$dir" || true
       done
+      # Also resolve the specific failed migration id mentioned in the error output, if present
+      FAILED_ID=$(printf '%s' "$OUTPUT" | sed -n 's/.*The `\([^`]*\)` migration.*/\1/p' | head -n1)
+      if [ -n "$FAILED_ID" ]; then
+        log "Resolving failed migration from error output as rolled-back: $FAILED_ID"
+        npx prisma migrate resolve --rolled-back "$FAILED_ID" || true
+      fi
       log "Retrying migrate deploy after rolling back failed runtime migrations."
       set +e
       OUTPUT_RB=$(npx prisma migrate deploy 2>&1)
@@ -78,7 +84,27 @@ if [ -n "${DATABASE_URL:-}" ]; then
         log "No diff produced; continuing."
       else
         log "Applying runtime migration and marking as applied."
-        npx prisma migrate deploy || { log "migrate deploy failed after runtime diff."; exit 1; }
+        set +e
+        OUT_DEPLOY=$(npx prisma migrate deploy 2>&1)
+        CODE_DEPLOY=$?
+        set -e
+        printf '%s\n' "$OUT_DEPLOY"
+        if [ "$CODE_DEPLOY" -ne 0 ]; then
+          if printf '%s' "$OUT_DEPLOY" | grep -q 'P3009'; then
+            # Resolve failed id from output and retry once
+            FAILED_ID2=$(printf '%s' "$OUT_DEPLOY" | sed -n 's/.*The `\([^`]*\)` migration.*/\1/p' | head -n1)
+            if [ -n "$FAILED_ID2" ]; then
+              log "Post-diff: resolving failed migration as rolled-back: $FAILED_ID2"
+              npx prisma migrate resolve --rolled-back "$FAILED_ID2" || true
+              log "Post-diff: retrying migrate deploy after resolving failed migration."
+              npx prisma migrate deploy || { log "migrate deploy failed after runtime diff and rollback."; exit 1; }
+            else
+              log "migrate deploy failed after runtime diff (no failed id parsed)."; exit 1
+            fi
+          else
+            log "migrate deploy failed after runtime diff."; exit 1
+          fi
+        fi
       fi
       # If runtime diff path also caused P3009, roll it back and do a final deploy try
       set +e
