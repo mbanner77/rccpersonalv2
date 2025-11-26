@@ -505,6 +505,7 @@ model Reminder {
 
   schedules   ReminderSchedule[]
   recipients  ReminderRecipient[]
+  sendLogs    ReminderSendLog[]
 }
 
 model ReminderSchedule {
