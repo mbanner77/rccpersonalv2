@@ -28,45 +28,61 @@ function ensureAdmin(user: SessionUser) {
 }
 
 export async function GET() {
-  const user = await requireUser();
-  ensureAdmin(user);
-  const templates = await (db as any)["taskTemplate"].findMany({
-    orderBy: [{ type: "asc" }, { title: "asc" }],
-    include: { ownerRole: { select: { id: true, key: true, label: true } } },
-  });
-  return Response.json(templates);
+  try {
+    const user = await requireUser();
+    ensureAdmin(user);
+    const templates = await (db as any)["taskTemplate"].findMany({
+      orderBy: [{ type: "asc" }, { title: "asc" }],
+      include: { role: { select: { id: true, key: true, label: true } } },
+    });
+    return Response.json(templates);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown error";
+    if (/does not exist|relation .* does not exist|column .* does not exist/i.test(msg)) return Response.json([]);
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
-  const user = await requireUser();
-  ensureAdmin(user);
-  const parsed = createSchema.safeParse(await req.json());
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
-  const data = parsed.data;
-  const created = await (db as any)["taskTemplate"].create({
-    data: {
-      title: data.title,
-      description: data.description,
-      type: data.type,
-      ownerRoleId: data.ownerRoleId,
-      relativeDueDays: data.relativeDueDays,
-      active: data.active,
-    },
-    include: { ownerRole: { select: { id: true, key: true, label: true } } },
-  });
-  return Response.json(created, { status: 201 });
+  try {
+    const user = await requireUser();
+    ensureAdmin(user);
+    const parsed = createSchema.safeParse(await req.json());
+    if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    const data = parsed.data;
+    const created = await (db as any)["taskTemplate"].create({
+      data: {
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        ownerRoleId: data.ownerRoleId,
+        relativeDueDays: data.relativeDueDays,
+        active: data.active,
+      },
+      include: { role: { select: { id: true, key: true, label: true } } },
+    });
+    return Response.json(created, { status: 201 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown error";
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: Request) {
-  const user = await requireUser();
-  ensureAdmin(user);
-  const parsed = updateSchema.safeParse(await req.json());
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { id, ...rest } = parsed.data;
-  const updated = await (db as any)["taskTemplate"].update({
-    where: { id },
-    data: rest,
-    include: { ownerRole: { select: { id: true, key: true, label: true } } },
-  });
-  return Response.json(updated);
+  try {
+    const user = await requireUser();
+    ensureAdmin(user);
+    const parsed = updateSchema.safeParse(await req.json());
+    if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    const { id, ...rest } = parsed.data;
+    const updated = await (db as any)["taskTemplate"].update({
+      where: { id },
+      data: rest,
+      include: { role: { select: { id: true, key: true, label: true } } },
+    });
+    return Response.json(updated);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown error";
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
