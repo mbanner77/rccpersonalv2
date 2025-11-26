@@ -83,7 +83,7 @@ if [ -n "${DATABASE_URL:-}" ]; then
       # Sanitize legacy enum/type statements that may not exist anymore
       if [ -s "$rt_dir/migration.sql" ]; then
         # Use Python for robust multi-line SQL sanitization
-        python3 << 'PYEOF' "$rt_dir/migration.sql"
+        python3 - "$rt_dir/migration.sql" << 'PYEOF'
 import sys, re
 
 filepath = sys.argv[1]
@@ -194,7 +194,7 @@ PYEOF
   # Sanitize legacy enum/type statements and column changes that should be skipped
   if [ -s "$rt_dir2/migration.sql" ]; then
     # Use Python for robust multi-line SQL sanitization
-    python3 << 'PYEOF' "$rt_dir2/migration.sql"
+    python3 - "$rt_dir2/migration.sql" << 'PYEOF'
 import sys, re
 
 filepath = sys.argv[1]
