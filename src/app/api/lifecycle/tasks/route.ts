@@ -68,40 +68,48 @@ function normalizeTask(task: any) {
 }
 
 export async function GET(req: Request) {
-  await requireUser();
-  const url = new URL(req.url);
-  const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { id, type, statusId, ownerRoleId, employeeId, q } = parsed.data;
-  const where: any = {};
-  if (id) where.id = id;
-  if (type) where.type = type;
-  if (statusId) where.statusId = statusId;
-  if (ownerRoleId) where.ownerRoleId = ownerRoleId;
-  if (employeeId) where.employeeId = employeeId;
-  if (q) {
-    const search = q.trim();
-    if (search) {
-      where.OR = [
-        { employee: { firstName: { contains: search, mode: "insensitive" } } },
-        { employee: { lastName: { contains: search, mode: "insensitive" } } },
-        { template: { title: { contains: search, mode: "insensitive" } } },
-      ];
+  try {
+    await requireUser();
+    const url = new URL(req.url);
+    const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
+    if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    const { id, type, statusId, ownerRoleId, employeeId, q } = parsed.data;
+    const where: any = {};
+    if (id) where.id = id;
+    if (type) where.type = type;
+    if (statusId) where.statusId = statusId;
+    if (ownerRoleId) where.ownerRoleId = ownerRoleId;
+    if (employeeId) where.employeeId = employeeId;
+    if (q) {
+      const search = q.trim();
+      if (search) {
+        where.OR = [
+          { employee: { firstName: { contains: search, mode: "insensitive" } } },
+          { employee: { lastName: { contains: search, mode: "insensitive" } } },
+          { template: { title: { contains: search, mode: "insensitive" } } },
+        ];
+      }
     }
-  }
 
-  const tasks = await (db as any)["taskAssignment"].findMany({
-    where,
-    orderBy: [{ dueDate: "asc" }],
-    include: {
-      employee: { select: { id: true, firstName: true, lastName: true, email: true } },
-      template: { select: { id: true, title: true, type: true } },
-      ownerRole: { select: { id: true, key: true, label: true } },
-      status: { select: { id: true, key: true, label: true, isDone: true } },
-    },
-  });
-  const normalized = tasks.map((task: any) => normalizeTask(task));
-  return Response.json(id ? (normalized[0] ?? null) : normalized);
+    const tasks = await (db as any)["taskAssignment"].findMany({
+      where,
+      orderBy: [{ dueDate: "asc" }],
+      include: {
+        employee: { select: { id: true, firstName: true, lastName: true, email: true } },
+        template: { select: { id: true, title: true, type: true } },
+        ownerRole: { select: { id: true, key: true, label: true } },
+        status: { select: { id: true, key: true, label: true, isDone: true } },
+      },
+    });
+    const normalized = tasks.map((task: any) => normalizeTask(task));
+    return Response.json(id ? (normalized[0] ?? null) : normalized);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown error";
+    if (/does not exist|relation .* does not exist/i.test(msg)) {
+      return Response.json([]);
+    }
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: Request) {
