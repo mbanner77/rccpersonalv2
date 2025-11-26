@@ -37,8 +37,13 @@ export async function GET() {
         orderBy: [{ type: "asc" }, { title: "asc" }],
         include: { role: { select: { id: true, key: true, label: true } } },
       });
-      return Response.json(templates);
-    } catch (includeErr) {
+      // Transform to rename 'role' to 'ownerRole' for frontend compatibility
+      const transformed = templates.map((t: Record<string, unknown>) => {
+        const { role, ...rest } = t;
+        return { ...rest, ownerRole: role };
+      });
+      return Response.json(transformed);
+    } catch {
       // Relation might not exist yet, try without include
       const templates = await (db as any)["taskTemplate"].findMany({
         orderBy: [{ type: "asc" }, { title: "asc" }],
@@ -70,7 +75,9 @@ export async function POST(req: Request) {
       },
       include: { role: { select: { id: true, key: true, label: true } } },
     });
-    return Response.json(created, { status: 201 });
+    // Transform to rename 'role' to 'ownerRole' for frontend compatibility
+    const { role, ...rest } = created as Record<string, unknown>;
+    return Response.json({ ...rest, ownerRole: role }, { status: 201 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown error";
     return Response.json({ error: msg }, { status: 500 });
@@ -89,7 +96,9 @@ export async function PATCH(req: Request) {
       data: rest,
       include: { role: { select: { id: true, key: true, label: true } } },
     });
-    return Response.json(updated);
+    // Transform to rename 'role' to 'ownerRole' for frontend compatibility
+    const { role, ...updatedRest } = updated as Record<string, unknown>;
+    return Response.json({ ...updatedRest, ownerRole: role });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown error";
     return Response.json({ error: msg }, { status: 500 });
