@@ -23,6 +23,26 @@ if [ -n "${DATABASE_URL:-}" ]; then
   printf '%s\n' "$OUTPUT"
 
   if [ "$STATUS" -ne 0 ]; then
+    if printf '%s' "$OUTPUT" | grep -q 'P3009'; then
+      log "Detected P3009 (failed migrations). Marking runtime migrations as rolled back."
+      for path in prisma/migrations/*render_runtime*/; do
+        [ -d "$path" ] || continue
+        dir=$(basename "$path")
+        log "Resolving failed migration as rolled-back: $dir"
+        npx prisma migrate resolve --rolled-back "$dir" || true
+      done
+      log "Retrying migrate deploy after rolling back failed runtime migrations."
+      set +e
+      OUTPUT_RB=$(npx prisma migrate deploy 2>&1)
+      STATUS_RB=$?
+      set -e
+      printf '%s\n' "$OUTPUT_RB"
+      if [ "$STATUS_RB" -eq 0 ]; then
+        log "migrate deploy succeeded after rolling back failed migrations."
+      else
+        log "migrate deploy still failing; proceeding to baseline recovery."
+      fi
+    fi
     # Baseline existing DB: mark all migrations as applied, then try again
     log "migrate deploy failed; attempting baseline recovery"
     for path in prisma/migrations/*/; do
