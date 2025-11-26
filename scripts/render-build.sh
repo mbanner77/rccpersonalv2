@@ -99,6 +99,9 @@ remove_patterns = [
     r'CREATE\s+TYPE[^;]*"LifecycleOwnerRole"[^;]*;',
     r'DROP\s+TYPE[^;]*"LifecycleOwnerRole"[^;]*;',
     r'ALTER\s+TYPE[^;]*"LifecycleOwnerRole"[^;]*;',
+    r'CREATE\s+TYPE[^;]*"LifecycleTaskStatus"[^;]*;',
+    r'DROP\s+TYPE[^;]*"LifecycleTaskStatus"[^;]*;',
+    r'ALTER\s+TYPE[^;]*"LifecycleTaskStatus"[^;]*;',
     r'DROP\s+INDEX[^;]*"TaskAssignment_employeeId_status_dueDate_idx"[^;]*;',
 ]
 for pat in remove_patterns:
@@ -211,6 +214,9 @@ remove_patterns = [
     r'CREATE\s+TYPE[^;]*"LifecycleOwnerRole"[^;]*;',
     r'DROP\s+TYPE[^;]*"LifecycleOwnerRole"[^;]*;',
     r'ALTER\s+TYPE[^;]*"LifecycleOwnerRole"[^;]*;',
+    r'CREATE\s+TYPE[^;]*"LifecycleTaskStatus"[^;]*;',
+    r'DROP\s+TYPE[^;]*"LifecycleTaskStatus"[^;]*;',
+    r'ALTER\s+TYPE[^;]*"LifecycleTaskStatus"[^;]*;',
     # Drop indexes on legacy columns we want to keep
     r'DROP\s+INDEX[^;]*"TaskAssignment_employeeId_status_dueDate_idx"[^;]*;',
 ]
