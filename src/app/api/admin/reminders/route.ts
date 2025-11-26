@@ -47,18 +47,27 @@ function ensureAccess(user: SessionUser, employeeUnitId: string | null | undefin
 }
 
 export async function GET() {
-  const user = await requireUser();
-  const where = user.role === "UNIT_LEAD" && user.unitId ? { employee: { unitId: user.unitId } } : undefined;
-  const items = await db.reminder.findMany({
-    where,
-    orderBy: [{ dueDate: "asc" }],
-    include: {
-      employee: { select: { id: true, firstName: true, lastName: true, email: true, unitId: true } },
-      schedules: { orderBy: { orderIndex: "asc" } },
-      recipients: { orderBy: { orderIndex: "asc" } },
-    },
-  });
-  return Response.json(items);
+  try {
+    const user = await requireUser();
+    const where = user.role === "UNIT_LEAD" && user.unitId ? { employee: { unitId: user.unitId } } : undefined;
+    const items = await (db as any).reminder.findMany({
+      where,
+      orderBy: [{ dueDate: "asc" }],
+      include: {
+        employee: { select: { id: true, firstName: true, lastName: true, email: true, unitId: true } },
+        schedules: { orderBy: { orderIndex: "asc" } },
+        recipients: { orderBy: { orderIndex: "asc" } },
+      },
+    });
+    return Response.json(items);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown error";
+    // If tables are not yet present (fresh deploy), return empty list instead of 500
+    if (/does not exist|relation .* does not exist/i.test(msg)) {
+      return Response.json([]);
+    }
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {

@@ -50,10 +50,20 @@ if [ -n "${DATABASE_URL:-}" ]; then
         log "No diff produced; continuing."
       else
         log "Applying runtime migration and marking as applied."
-        npx prisma migrate resolve --applied "$(basename "$rt_dir")" || true
         npx prisma migrate deploy || { log "migrate deploy failed after runtime diff."; exit 1; }
       fi
     fi
+  fi
+  # Ensure DB now matches schema: generate a diff and apply if any remaining changes
+  ts2=$(date +%Y%m%d%H%M%S)
+  rt_dir2="prisma/migrations/${ts2}_render_runtime_sync"
+  mkdir -p "$rt_dir2"
+  npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script > "$rt_dir2/migration.sql" || true
+  if [ -s "$rt_dir2/migration.sql" ]; then
+    log "Additional schema changes found; applying runtime sync migration."
+    npx prisma migrate deploy || { log "migrate deploy failed after runtime sync."; exit 1; }
+  else
+    rm -rf "$rt_dir2"
   fi
 else
   log "DATABASE_URL not set; skipping migrate deploy in build."
