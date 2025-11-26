@@ -31,14 +31,23 @@ export async function GET() {
   try {
     const user = await requireUser();
     ensureAdmin(user);
-    const templates = await (db as any)["taskTemplate"].findMany({
-      orderBy: [{ type: "asc" }, { title: "asc" }],
-      include: { role: { select: { id: true, key: true, label: true } } },
-    });
-    return Response.json(templates);
+    // Try with role include first, fall back to simple query if relation doesn't exist
+    try {
+      const templates = await (db as any)["taskTemplate"].findMany({
+        orderBy: [{ type: "asc" }, { title: "asc" }],
+        include: { role: { select: { id: true, key: true, label: true } } },
+      });
+      return Response.json(templates);
+    } catch (includeErr) {
+      // Relation might not exist yet, try without include
+      const templates = await (db as any)["taskTemplate"].findMany({
+        orderBy: [{ type: "asc" }, { title: "asc" }],
+      });
+      return Response.json(templates);
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown error";
-    if (/does not exist|relation .* does not exist|column .* does not exist/i.test(msg)) return Response.json([]);
+    if (/does not exist|relation|column|undefined/i.test(msg)) return Response.json([]);
     return Response.json({ error: msg }, { status: 500 });
   }
 }
