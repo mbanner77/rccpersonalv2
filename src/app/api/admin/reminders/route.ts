@@ -47,7 +47,7 @@ export async function GET() {
       orderBy: [{ dueDate: "asc" }],
       include: {
         employee: { select: { id: true, firstName: true, lastName: true, email: true, unitId: true } },
-        reminderType: true,
+        reminderTypeConfig: true,
         schedules: { orderBy: { orderIndex: "asc" } },
         recipients: { orderBy: { orderIndex: "asc" } },
       },

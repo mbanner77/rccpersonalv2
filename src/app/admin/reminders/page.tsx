@@ -22,7 +22,7 @@ type Reminder = {
   id: string;
   typeLegacy: string;
   reminderTypeId: string | null;
-  reminderType?: ReminderTypeConfig | null;
+  reminderTypeConfig?: ReminderTypeConfig | null;
   description?: string | null;
   employeeId: string;
   dueDate: string;
@@ -250,9 +250,9 @@ export default function RemindersPage() {
     if (res.ok) await load();
   }
 
-  // Helper to get type label from reminderTypes or typeLegacy
+  // Helper to get type label from reminderTypeConfig or typeLegacy
   const getTypeLabel = (r: Reminder) => {
-    if (r.reminderType?.label) return r.reminderType.label;
+    if (r.reminderTypeConfig?.label) return r.reminderTypeConfig.label;
     // Fallback to typeLegacy with capitalization
     if (r.typeLegacy) {
       return r.typeLegacy.charAt(0).toUpperCase() + r.typeLegacy.slice(1).toLowerCase();
