@@ -120,13 +120,35 @@ export async function POST(req: Request) {
 
   // Get a default role if templates don't have one
   let defaultRoleId: string | null = null;
-  const defaultRole = await (db as any)["lifecycleRole"].findFirst({
+  let defaultRole = await (db as any)["lifecycleRole"].findFirst({
     where: { OR: [{ key: "HR" }, { key: "ADMIN" }] },
-    select: { id: true },
+    select: { id: true, key: true },
   });
+  console.log("[generate] Default role lookup result:", defaultRole);
+  
+  if (!defaultRole) {
+    // Create default HR role if none exists
+    console.log("[generate] No default role found, creating HR role...");
+    try {
+      defaultRole = await (db as any)["lifecycleRole"].create({
+        data: { 
+          key: "HR", 
+          label: "HR", 
+          description: "Human Resources",
+          orderIndex: 0 
+        },
+        select: { id: true, key: true },
+      });
+      console.log("[generate] Created default HR role:", defaultRole.id);
+    } catch (createErr) {
+      console.error("[generate] Failed to create default role:", createErr);
+    }
+  }
+  
   if (defaultRole) {
     defaultRoleId = defaultRole.id;
   }
+  console.log("[generate] Using defaultRoleId:", defaultRoleId);
 
   let generatedCount = 0;
   for (const tpl of templates) {
@@ -135,6 +157,8 @@ export async function POST(req: Request) {
 
     // ownerRoleId is required - use template's role or fallback to default
     const roleId = tpl.ownerRoleId || defaultRoleId;
+    console.log(`[generate] Template ${tpl.id} (${tpl.title}): ownerRoleId=${tpl.ownerRoleId}, using roleId=${roleId}`);
+    
     if (!roleId) {
       console.error(`[generate] Skipping template ${tpl.id}: No ownerRoleId and no default role available`);
       continue;
