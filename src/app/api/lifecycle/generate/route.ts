@@ -104,10 +104,27 @@ export async function POST(req: Request) {
   }
   const openStatusId = defaultStatus.id;
 
+  // Get a default role if templates don't have one
+  let defaultRoleId: string | null = null;
+  const defaultRole = await (db as any)["lifecycleRole"].findFirst({
+    where: { OR: [{ key: "HR" }, { key: "ADMIN" }] },
+    select: { id: true },
+  });
+  if (defaultRole) {
+    defaultRoleId = defaultRole.id;
+  }
+
   let generatedCount = 0;
   for (const tpl of templates) {
     const due = new Date(anchorDate);
     due.setDate(due.getDate() + (tpl.relativeDueDays || 0));
+
+    // ownerRoleId is required - use template's role or fallback to default
+    const roleId = tpl.ownerRoleId || defaultRoleId;
+    if (!roleId) {
+      console.error(`[generate] Skipping template ${tpl.id}: No ownerRoleId and no default role available`);
+      continue;
+    }
 
     try {
       if (overwrite) {
@@ -118,42 +135,42 @@ export async function POST(req: Request) {
         });
         
         if (existing) {
-          // Update existing - use Prisma instead of raw SQL to avoid legacy column issues
+          // Update existing
           await (db as any)["taskAssignment"].update({
             where: { id: existing.id },
             data: {
               type,
               dueDate: due,
-              ownerRoleId: tpl.ownerRoleId,
-              statusId: openStatusId,
+              ownerRole: { connect: { id: roleId } },
+              status: { connect: { id: openStatusId } },
             },
           });
           generatedCount++;
         } else {
-          // Insert new - use Prisma to handle column mapping properly
+          // Insert new with proper relation connects
           await (db as any)["taskAssignment"].create({
             data: {
-              employeeId,
-              taskTemplateId: tpl.id,
+              employee: { connect: { id: employeeId } },
+              template: { connect: { id: tpl.id } },
               type,
               dueDate: due,
-              ownerRoleId: tpl.ownerRoleId,
-              statusId: openStatusId,
+              ownerRole: { connect: { id: roleId } },
+              status: { connect: { id: openStatusId } },
             },
           });
           generatedCount++;
         }
       } else {
-        // Create if not exists - use upsert to handle conflicts
+        // Create if not exists
         try {
           await (db as any)["taskAssignment"].create({
             data: {
-              employeeId,
-              taskTemplateId: tpl.id,
+              employee: { connect: { id: employeeId } },
+              template: { connect: { id: tpl.id } },
               type,
               dueDate: due,
-              ownerRoleId: tpl.ownerRoleId,
-              statusId: openStatusId,
+              ownerRole: { connect: { id: roleId } },
+              status: { connect: { id: openStatusId } },
             },
           });
           generatedCount++;
