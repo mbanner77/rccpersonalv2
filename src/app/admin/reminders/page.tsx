@@ -4,7 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "@/hooks/useSession";
 import Link from "next/link";
 
-type ReminderType = "GEHALT" | "MEILENSTEIN" | "SONDERBONUS" | "STAFFELBONUS" | "URLAUBSGELD" | "WEIHNACHTSGELD";
+type ReminderTypeConfig = {
+  id: string;
+  key: string;
+  label: string;
+  color: string | null;
+  active: boolean;
+};
 
 type Employee = { id: string; firstName: string; lastName: string; email: string | null };
 
@@ -14,7 +20,9 @@ type Recipient = { email: string; orderIndex?: number };
 
 type Reminder = {
   id: string;
-  type: ReminderType;
+  typeLegacy: string;
+  reminderTypeId: string | null;
+  reminderType?: ReminderTypeConfig | null;
   description?: string | null;
   employeeId: string;
   dueDate: string;
@@ -26,7 +34,7 @@ type Reminder = {
 
 type FormState = {
   id?: string;
-  type: ReminderType;
+  reminderTypeId: string;
   description: string;
   employeeId: string;
   dueDate: string; // yyyy-mm-dd
@@ -35,10 +43,8 @@ type FormState = {
   recipients: Recipient[];
 };
 
-const TYPES: ReminderType[] = ["GEHALT", "MEILENSTEIN", "SONDERBONUS", "STAFFELBONUS", "URLAUBSGELD", "WEIHNACHTSGELD"];
-
 const EMPTY: FormState = {
-  type: "GEHALT",
+  reminderTypeId: "",
   description: "",
   employeeId: "",
   dueDate: new Date().toISOString().slice(0, 10),
@@ -76,6 +82,8 @@ export default function RemindersPage() {
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
+
+  const [reminderTypes, setReminderTypes] = useState<ReminderTypeConfig[]>([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -150,10 +158,23 @@ export default function RemindersPage() {
     }
   }
 
+  async function loadReminderTypes() {
+    try {
+      const res = await fetch("/api/admin/reminder-types", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setReminderTypes(data as ReminderTypeConfig[]);
+      }
+    } catch (e) {
+      console.error("Failed to load reminder types:", e);
+    }
+  }
+
   useEffect(() => {
     if (isAllowed) {
       void load();
       void loadEmployees();
+      void loadReminderTypes();
     }
   }, [isAllowed]);
 
@@ -170,7 +191,7 @@ export default function RemindersPage() {
   const openEdit = (r: Reminder) => {
     setForm({
       id: r.id,
-      type: r.type,
+      reminderTypeId: r.reminderTypeId ?? "",
       description: r.description ?? "",
       employeeId: r.employeeId,
       dueDate: r.dueDate.substring(0, 10),
@@ -202,7 +223,7 @@ export default function RemindersPage() {
       }
       const payload = {
         ...(form.id ? { id: form.id } : {}),
-        type: form.type,
+        reminderTypeId: form.reminderTypeId || undefined,
         description: form.description.trim() || undefined,
         employeeId: form.employeeId,
         dueDate: new Date(form.dueDate),
@@ -229,23 +250,18 @@ export default function RemindersPage() {
     if (res.ok) await load();
   }
 
-  const typeColors: Record<ReminderType, string> = {
-    GEHALT: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    MEILENSTEIN: "bg-blue-100 text-blue-800 border-blue-200",
-    SONDERBONUS: "bg-purple-100 text-purple-800 border-purple-200",
-    STAFFELBONUS: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    URLAUBSGELD: "bg-amber-100 text-amber-800 border-amber-200",
-    WEIHNACHTSGELD: "bg-rose-100 text-rose-800 border-rose-200",
+  // Helper to get type label from reminderTypes or typeLegacy
+  const getTypeLabel = (r: Reminder) => {
+    if (r.reminderType?.label) return r.reminderType.label;
+    // Fallback to typeLegacy with capitalization
+    if (r.typeLegacy) {
+      return r.typeLegacy.charAt(0).toUpperCase() + r.typeLegacy.slice(1).toLowerCase();
+    }
+    return "Unbekannt";
   };
 
-  const typeLabels: Record<ReminderType, string> = {
-    GEHALT: "Gehalt",
-    MEILENSTEIN: "Meilenstein",
-    SONDERBONUS: "Sonderbonus",
-    STAFFELBONUS: "Staffelbonus",
-    URLAUBSGELD: "Urlaubsgeld",
-    WEIHNACHTSGELD: "Weihnachtsgeld",
-  };
+  // Default color classes for type badges
+  const defaultTypeColor = "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-600";
 
   if (!isAllowed) return <div className="p-6 text-sm text-red-600">Zugriff verweigert</div>;
 
@@ -281,8 +297,8 @@ export default function RemindersPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${typeColors[r.type]}`}>
-                      {typeLabels[r.type]}
+                    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${defaultTypeColor}`}>
+                      {getTypeLabel(r)}
                     </span>
                     {!r.active && <span className="rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">Inaktiv</span>}
                     {isPast && r.active && <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-600 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">Überfällig</span>}
@@ -346,9 +362,10 @@ export default function RemindersPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Typ</span>
-                <select className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:focus:border-white dark:focus:ring-white/10" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as ReminderType }))}>
-                  {TYPES.map((t) => (
-                    <option key={t} value={t}>{typeLabels[t]}</option>
+                <select className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:focus:border-white dark:focus:ring-white/10" value={form.reminderTypeId} onChange={(e) => setForm((p) => ({ ...p, reminderTypeId: e.target.value }))}>
+                  <option value="">Bitte wählen…</option>
+                  {reminderTypes.filter((t) => t.active).map((t) => (
+                    <option key={t.id} value={t.id}>{t.label}</option>
                   ))}
                 </select>
               </label>

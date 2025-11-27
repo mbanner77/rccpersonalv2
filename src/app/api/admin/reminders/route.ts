@@ -2,14 +2,6 @@ import { db } from "@/lib/prisma";
 import { hasRole, requireUser, type SessionUser } from "@/lib/auth";
 import { z } from "zod";
 
-const ReminderTypeValues = [
-  "GEHALT",
-  "MEILENSTEIN",
-  "SONDERBONUS",
-  "STAFFELBONUS",
-  "URLAUBSGELD",
-  "WEIHNACHTSGELD",
-] as const;
 
 const RecipientSchema = z.object({
   email: z.string().email(),
@@ -24,7 +16,7 @@ const ScheduleSchema = z.object({
 });
 
 const CreateSchema = z.object({
-  type: z.enum(ReminderTypeValues),
+  reminderTypeId: z.string().min(1).optional().nullable(),
   description: z.string().trim().optional().nullable(),
   employeeId: z.string().min(1),
   dueDate: z.coerce.date(),
@@ -55,6 +47,7 @@ export async function GET() {
       orderBy: [{ dueDate: "asc" }],
       include: {
         employee: { select: { id: true, firstName: true, lastName: true, email: true, unitId: true } },
+        reminderType: true,
         schedules: { orderBy: { orderIndex: "asc" } },
         recipients: { orderBy: { orderIndex: "asc" } },
       },
@@ -82,7 +75,7 @@ export async function POST(req: Request) {
 
   const created = await db.reminder.create({
     data: {
-      typeLegacy: data.type,
+      reminderTypeId: data.reminderTypeId ?? null,
       description: data.description ?? null,
       employeeId: data.employeeId,
       dueDate: data.dueDate,
@@ -116,7 +109,7 @@ export async function PATCH(req: Request) {
     await tx.reminder.update({
       where: { id },
       data: {
-        typeLegacy: rest.type ?? undefined,
+        reminderTypeId: rest.reminderTypeId ?? undefined,
         description: rest.description ?? undefined,
         employeeId: rest.employeeId ?? undefined,
         dueDate: rest.dueDate ?? undefined,
