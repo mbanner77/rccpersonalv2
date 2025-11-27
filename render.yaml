@@ -34,13 +34,15 @@ services:
   - type: cron
     name: employee-anniversaries-daily-cron
     schedule: "0 8 * * *" # daily at 08:00 UTC (~09:00 CET)
-    runtime: image
+    runtime: node
     plan: starter
     region: frankfurt
-    image:
-      url: curlimages/curl:8.6.0
-    startCommand: 'bash -lc "curl -sSf -X POST -H \"x-cron-secret: $CRON_SECRET\" \"https://$WEB_HOST/api/cron/reminders/send\" || true"'
+    repo: https://github.com/mbanner77/rcpersonal.git
+    buildCommand: npm ci
+    startCommand: node scripts/cron-runner.js
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: WEB_HOST
         fromService:
           name: employee-anniversaries-web
