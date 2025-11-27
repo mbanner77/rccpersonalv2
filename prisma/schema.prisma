@@ -468,14 +468,17 @@ model LifecycleTask {
 
 // --- Reminders ---
 
-// Legacy enum kept for migration compatibility
-enum ReminderTypeLegacy {
+// Legacy enum - maps to existing "ReminderType" enum in production DB
+// Using @map to avoid conflict with new ReminderType model
+enum ReminderTypeEnum {
   GEHALT
   MEILENSTEIN
   SONDERBONUS
   STAFFELBONUS
   URLAUBSGELD
   WEIHNACHTSGELD
+
+  @@map("ReminderType")
 }
 
 model ReminderType {
@@ -497,8 +500,8 @@ model Reminder {
   // Optional until all existing records are migrated
   reminderType  ReminderType? @relation(fields: [reminderTypeId], references: [id])
   reminderTypeId String?
-  // Legacy field - maps to existing "type" column
-  typeLegacy    ReminderTypeLegacy? @map("type")
+  // Legacy field - maps to existing "type" column (uses ReminderType enum in DB)
+  typeLegacy    ReminderTypeEnum? @map("type")
   description   String?
   employee    Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId  String

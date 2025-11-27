@@ -105,6 +105,10 @@ remove_patterns = [
     r'CREATE\s+TYPE[^;]*"ReminderTypeLegacy"[^;]*;',
     r'DROP\s+TYPE[^;]*"ReminderTypeLegacy"[^;]*;',
     r'ALTER\s+TYPE[^;]*"ReminderTypeLegacy"[^;]*;',
+    # Also handle the old ReminderType enum (before rename to ReminderTypeLegacy)
+    r'CREATE\s+TYPE[^;]*"ReminderType"[^;]*;',
+    r'DROP\s+TYPE[^;]*"ReminderType"[^;]*;',
+    r'ALTER\s+TYPE[^;]*"ReminderType"[^;]*;',
     r'DROP\s+INDEX[^;]*"TaskAssignment_employeeId_status_dueDate_idx"[^;]*;',
 ]
 for pat in remove_patterns:
@@ -227,6 +231,10 @@ remove_patterns = [
     r'CREATE\s+TYPE[^;]*"ReminderTypeLegacy"[^;]*;',
     r'DROP\s+TYPE[^;]*"ReminderTypeLegacy"[^;]*;',
     r'ALTER\s+TYPE[^;]*"ReminderTypeLegacy"[^;]*;',
+    # Also handle the old ReminderType enum (before rename to ReminderTypeLegacy)
+    r'CREATE\s+TYPE[^;]*"ReminderType"[^;]*;',
+    r'DROP\s+TYPE[^;]*"ReminderType"[^;]*;',
+    r'ALTER\s+TYPE[^;]*"ReminderType"[^;]*;',
     # Drop indexes on legacy columns we want to keep
     r'DROP\s+INDEX[^;]*"TaskAssignment_employeeId_status_dueDate_idx"[^;]*;',
 ]

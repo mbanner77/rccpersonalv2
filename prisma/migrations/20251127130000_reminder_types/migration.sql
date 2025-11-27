@@ -1,9 +1,5 @@
--- CreateEnum (only if not exists)
-DO $$ BEGIN
-    CREATE TYPE "ReminderTypeLegacy" AS ENUM ('GEHALT', 'MEILENSTEIN', 'SONDERBONUS', 'STAFFELBONUS', 'URLAUBSGELD', 'WEIHNACHTSGELD');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- Note: The existing "ReminderType" enum in the database is kept as-is.
+-- The Prisma schema maps it as ReminderTypeEnum with @@map("ReminderType").
 
 -- CreateTable (only if not exists)
 CREATE TABLE IF NOT EXISTS "ReminderType" (
