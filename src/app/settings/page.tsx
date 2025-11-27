@@ -42,6 +42,14 @@ export default function SettingsPage() {
   // Reminder trigger state
   const [triggeringReminders, setTriggeringReminders] = useState(false);
   const [reminderResult, setReminderResult] = useState<{ ok: boolean; message: string; sent?: number } | null>(null);
+  
+  // Database admin state
+  const [showDbAdmin, setShowDbAdmin] = useState(false);
+  const [dbTables, setDbTables] = useState<Array<{ name: string; count: number; description: string }>>([]);
+  const [dbLoading, setDbLoading] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [tableData, setTableData] = useState<{ columns: string[]; data: unknown[]; total: number } | null>(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -72,6 +80,44 @@ export default function SettingsPage() {
   function update<K extends keyof SettingsDto>(key: K, value: SettingsDto[K]) {
     if (!data) return;
     setData({ ...data, [key]: value });
+  }
+
+  // Database admin functions
+  async function loadDbTables() {
+    setDbLoading(true);
+    try {
+      const res = await fetch("/api/admin/database");
+      if (res.ok) {
+        const json = await res.json();
+        setDbTables(json.tables ?? []);
+      }
+    } catch (err) {
+      console.error("Failed to load db tables:", err);
+    } finally {
+      setDbLoading(false);
+    }
+  }
+
+  async function loadTableData(tableName: string) {
+    setSelectedTable(tableName);
+    setTableLoading(true);
+    setTableData(null);
+    try {
+      const res = await fetch(`/api/admin/database/${tableName}?limit=50`);
+      if (res.ok) {
+        const json = await res.json();
+        setTableData({ columns: json.columns, data: json.data, total: json.total });
+      }
+    } catch (err) {
+      console.error("Failed to load table data:", err);
+    } finally {
+      setTableLoading(false);
+    }
+  }
+
+  function openDbAdmin() {
+    setShowDbAdmin(true);
+    loadDbTables();
   }
 
   return (
@@ -356,6 +402,31 @@ export default function SettingsPage() {
               )}
             </div>
 
+            {/* Database Administration Card */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900/30">
+                  <svg className="h-5 w-5 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Datenbank-Administration</h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Tabellenübersicht und Datenbankstatistiken</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={openDbAdmin}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+                Datenbank öffnen
+              </button>
+            </div>
+
             {/* Save Button */}
             <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
               <div>
@@ -412,6 +483,139 @@ export default function SettingsPage() {
                 <p>Envelope: From {testResult.envelope?.from ?? "?"} → {(testResult.envelope?.to ?? []).join(", ") || "?"}</p>
                 {typeof testResult.durationMs === "number" && <p>Dauer: {testResult.durationMs} ms</p>}
                 {testResult.error && <p className="text-red-600">Fehler: {testResult.error}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Database Admin Dialog */}
+      {showDbAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="flex h-[85vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-800">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Datenbank-Administration</h3>
+              </div>
+              <button 
+                onClick={() => { setShowDbAdmin(false); setSelectedTable(null); setTableData(null); }} 
+                className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Sidebar - Table List */}
+              <div className="w-72 flex-shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50">
+                <div className="p-4">
+                  <h4 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tabellen</h4>
+                  {dbLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-zinc-500">
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                      Lade…
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {dbTables.map((table) => (
+                        <button
+                          key={table.name}
+                          onClick={() => loadTableData(table.name)}
+                          className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                            selectedTable === table.name
+                              ? "bg-slate-600 text-white"
+                              : "text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{table.name}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-xs ${
+                              selectedTable === table.name
+                                ? "bg-white/20 text-white"
+                                : "bg-zinc-200 text-zinc-600 dark:bg-zinc-600 dark:text-zinc-300"
+                            }`}>
+                              {table.count}
+                            </span>
+                          </div>
+                          <div className={`text-xs ${selectedTable === table.name ? "text-white/70" : "text-zinc-500"}`}>
+                            {table.description}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Main Content - Table Data */}
+              <div className="flex-1 overflow-auto p-4">
+                {!selectedTable ? (
+                  <div className="flex h-full flex-col items-center justify-center text-zinc-500">
+                    <svg className="mb-4 h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                    <p className="text-lg font-medium">Tabelle auswählen</p>
+                    <p className="text-sm">Wählen Sie links eine Tabelle aus, um die Daten anzuzeigen.</p>
+                  </div>
+                ) : tableLoading ? (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="flex items-center gap-3 text-zinc-500">
+                      <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                      Lade Tabellendaten…
+                    </div>
+                  </div>
+                ) : tableData ? (
+                  <div>
+                    <div className="mb-4 flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-zinc-900 dark:text-white">{selectedTable}</h4>
+                      <span className="rounded-full bg-zinc-200 px-3 py-1 text-sm text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                        {tableData.total} Einträge
+                      </span>
+                    </div>
+                    {tableData.data.length === 0 ? (
+                      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                        Keine Daten vorhanden
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-zinc-100 text-xs uppercase text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
+                            <tr>
+                              {tableData.columns.slice(0, 8).map((col) => (
+                                <th key={col} className="whitespace-nowrap px-4 py-3 font-semibold">{col}</th>
+                              ))}
+                              {tableData.columns.length > 8 && (
+                                <th className="whitespace-nowrap px-4 py-3 font-semibold">+{tableData.columns.length - 8} mehr</th>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                            {(tableData.data as Record<string, unknown>[]).slice(0, 50).map((row, i) => (
+                              <tr key={i} className="bg-white hover:bg-zinc-50 dark:bg-zinc-800 dark:hover:bg-zinc-700">
+                                {tableData.columns.slice(0, 8).map((col) => (
+                                  <td key={col} className="max-w-[200px] truncate whitespace-nowrap px-4 py-2 text-zinc-700 dark:text-zinc-300">
+                                    {row[col] === null ? <span className="text-zinc-400">null</span> : String(row[col]).slice(0, 50)}
+                                  </td>
+                                ))}
+                                {tableData.columns.length > 8 && (
+                                  <td className="px-4 py-2 text-zinc-400">…</td>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {tableData.total > 50 && (
+                      <p className="mt-2 text-sm text-zinc-500">Zeigt die ersten 50 von {tableData.total} Einträgen</p>
+                    )}
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
