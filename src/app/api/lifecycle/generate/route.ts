@@ -173,42 +173,42 @@ export async function POST(req: Request) {
         });
         
         if (existing) {
-          // Update existing
+          // Update existing - use direct FK fields to avoid conflict with legacy column mappings
           await (db as any)["taskAssignment"].update({
             where: { id: existing.id },
             data: {
               type,
               dueDate: due,
-              ownerRole: { connect: { id: roleId } },
-              status: { connect: { id: openStatusId } },
+              ownerRoleId: roleId,
+              statusId: openStatusId,
             },
           });
           generatedCount++;
         } else {
-          // Insert new with proper relation connects
+          // Insert new - use direct FK fields to avoid conflict with legacy column mappings
           await (db as any)["taskAssignment"].create({
             data: {
-              employee: { connect: { id: employeeId } },
-              template: { connect: { id: tpl.id } },
+              employeeId,
+              taskTemplateId: tpl.id,
               type,
               dueDate: due,
-              ownerRole: { connect: { id: roleId } },
-              status: { connect: { id: openStatusId } },
+              ownerRoleId: roleId,
+              statusId: openStatusId,
             },
           });
           generatedCount++;
         }
       } else {
-        // Create if not exists
+        // Create if not exists - use direct FK fields to avoid conflict with legacy column mappings
         try {
           await (db as any)["taskAssignment"].create({
             data: {
-              employee: { connect: { id: employeeId } },
-              template: { connect: { id: tpl.id } },
+              employeeId,
+              taskTemplateId: tpl.id,
               type,
               dueDate: due,
-              ownerRole: { connect: { id: roleId } },
-              status: { connect: { id: openStatusId } },
+              ownerRoleId: roleId,
+              statusId: openStatusId,
             },
           });
           generatedCount++;
