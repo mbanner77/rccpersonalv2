@@ -132,7 +132,11 @@ export default function LifecycleTasksPage({ taskType, title }: Props) {
 
   // Generate tasks for an employee
   const generateTasks = async () => {
-    if (!selectedEmployeeId) return;
+    if (!selectedEmployeeId) {
+      console.warn("[generateTasks] No employee selected");
+      return;
+    }
+    console.log("[generateTasks] Starting generation for employee:", selectedEmployeeId, "type:", taskType);
     setGenerating(true);
     setGenerateResult(null);
     try {
@@ -143,17 +147,24 @@ export default function LifecycleTasksPage({ taskType, title }: Props) {
       if (selectedTemplateId) {
         body.templateId = selectedTemplateId;
       }
+      console.log("[generateTasks] Sending request with body:", body);
       const res = await fetch("/api/lifecycle/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      console.log("[generateTasks] Response status:", res.status);
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Fehler beim Generieren");
+      console.log("[generateTasks] Response JSON:", json);
+      if (!res.ok) {
+        const errorMsg = typeof json?.error === "object" ? JSON.stringify(json.error) : (json?.error ?? "Fehler beim Generieren");
+        throw new Error(errorMsg);
+      }
       setGenerateResult(`${json.generated} Aufgaben erstellt`);
       setSelectedEmployeeId("");
       void load();
     } catch (err) {
+      console.error("[generateTasks] Error:", err);
       setGenerateResult(err instanceof Error ? err.message : "Fehler beim Generieren");
     } finally {
       setGenerating(false);

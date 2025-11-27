@@ -20,12 +20,26 @@ function canGenerate(user: SessionUser) {
 
 
 export async function POST(req: Request) {
+  console.log("[generate] POST request received");
+  
   const user = await requireUser();
-  if (!canGenerate(user)) return Response.json({ error: "Forbidden" }, { status: 403 });
+  console.log("[generate] User:", user?.email, "Role:", user?.role);
+  
+  if (!canGenerate(user)) {
+    console.log("[generate] Forbidden - user role not allowed");
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  const parsed = bodySchema.safeParse(await req.json());
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  const body = await req.json();
+  console.log("[generate] Request body:", body);
+  
+  const parsed = bodySchema.safeParse(body);
+  if (!parsed.success) {
+    console.log("[generate] Validation failed:", parsed.error.flatten());
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
   const { employeeId, type, overwrite, templateId } = parsed.data;
+  console.log("[generate] Parsed data:", { employeeId, type, overwrite, templateId });
 
   const employee = await (db as any)["employee"].findUnique({
     where: { id: employeeId },
