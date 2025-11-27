@@ -79,6 +79,45 @@ export default function RemindersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // Send reminder email immediately
+  async function sendNow() {
+    if (!form.id) {
+      setSendResult({ ok: false, message: "Bitte speichern Sie die Erinnerung zuerst." });
+      return;
+    }
+    if (form.recipients.length === 0 || !form.recipients.some(r => r.email.trim())) {
+      setSendResult({ ok: false, message: "Bitte fügen Sie mindestens einen Empfänger hinzu." });
+      return;
+    }
+    
+    setSending(true);
+    setSendResult(null);
+    try {
+      const res = await fetch("/api/admin/reminders/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reminderId: form.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error ?? `HTTP ${res.status}`);
+      }
+      setSendResult({ 
+        ok: true, 
+        message: `E-Mail erfolgreich an ${json.sent} Empfänger gesendet: ${json.recipients?.join(", ") ?? ""}` 
+      });
+    } catch (err) {
+      setSendResult({ 
+        ok: false, 
+        message: err instanceof Error ? err.message : "Fehler beim Senden" 
+      });
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function load() {
     try {
@@ -145,6 +184,7 @@ export default function RemindersPage() {
     setDialogOpen(false);
     setForm({ ...EMPTY });
     setSaving(false);
+    setSendResult(null);
   };
 
   async function submit() {
@@ -384,9 +424,34 @@ export default function RemindersPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <button onClick={closeDialog} className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600">Abbrechen</button>
-              <button onClick={submit} disabled={saving || !form.employeeId} className="rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200">{saving ? "Speichern…" : "Speichern"}</button>
+            {/* Send result message */}
+            {sendResult && (
+              <div className={`mt-4 rounded-lg border px-4 py-3 text-sm ${sendResult.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>
+                {sendResult.message}
+              </div>
+            )}
+
+            <div className="mt-6 flex items-center justify-between">
+              {/* Send now button - only for existing reminders */}
+              <div>
+                {form.id && (
+                  <button
+                    type="button"
+                    onClick={sendNow}
+                    disabled={sending || form.recipients.length === 0}
+                    className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    {sending ? "Sende…" : "Jetzt senden"}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={closeDialog} className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600">Abbrechen</button>
+                <button onClick={submit} disabled={saving || !form.employeeId} className="rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200">{saving ? "Speichern…" : "Speichern"}</button>
+              </div>
             </div>
           </div>
         </div>
