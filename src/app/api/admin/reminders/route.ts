@@ -82,14 +82,15 @@ export async function POST(req: Request) {
 
   const created = await db.reminder.create({
     data: {
-      type: data.type as any,
+      typeLegacy: data.type,
       description: data.description ?? null,
       employeeId: data.employeeId,
       dueDate: data.dueDate,
       active: data.active ?? true,
       schedules: { create: data.schedules.map((s) => ({ label: s.label, daysBefore: s.daysBefore, timeOfDay: s.timeOfDay ?? null, orderIndex: s.orderIndex ?? 0 })) },
       recipients: { create: data.recipients.map((r) => ({ email: r.email, orderIndex: r.orderIndex ?? 0 })) },
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
     include: { schedules: true, recipients: true },
   });
   return Response.json(created, { status: 201 });
@@ -112,15 +113,16 @@ export async function PATCH(req: Request) {
   }
 
   const updated = await db.$transaction(async (tx) => {
-    const updatedReminder = await tx.reminder.update({
+    await tx.reminder.update({
       where: { id },
       data: {
-        type: (rest.type as any) ?? undefined,
+        typeLegacy: rest.type ?? undefined,
         description: rest.description ?? undefined,
         employeeId: rest.employeeId ?? undefined,
         dueDate: rest.dueDate ?? undefined,
         active: typeof rest.active === "boolean" ? rest.active : undefined,
-      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
     });
 
     if (rest.schedules) {
