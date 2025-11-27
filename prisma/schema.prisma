@@ -41,9 +41,9 @@ model TaskAssignment {
   dueDate        DateTime
   ownerRole      LifecycleRole @relation("LifecycleRoleTaskAssignments", fields: [ownerRoleId], references: [id])
   ownerRoleId    String
-  // Keep old DB columns mapped as Unsupported to avoid type changes via db push
-  ownerRoleLegacy Unsupported("LifecycleOwnerRole")? @map("ownerRole")
-  statusLegacy    Unsupported("TaskStatus")?         @map("status")
+  // Legacy columns - mapped as String to match production DB
+  ownerRoleLegacy String? @map("ownerRole")
+  statusLegacy    String? @map("status")
   notes          String?
   completedAt    DateTime?
   createdAt      DateTime      @default(now())
