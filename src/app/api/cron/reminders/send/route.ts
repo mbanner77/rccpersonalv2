@@ -39,6 +39,7 @@ export async function POST(req: Request) {
   const dayEnd = endOfDay(today);
 
   // Load active reminders with schedules and recipients
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reminders = await db.reminder.findMany({
     where: { active: true },
     include: {
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       schedules: true,
       recipients: true,
     },
-  });
+  }) as any[];
 
   let sent = 0;
   for (const r of reminders) {
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
       if (targetDay >= dayStart && targetDay <= dayEnd) {
         // Optional timeOfDay gate: if provided, only send after that time
         if (s.timeOfDay) {
-          const [hh, mm] = s.timeOfDay.split(":").map((n) => parseInt(n || "0", 10));
+          const [hh, mm] = s.timeOfDay.split(":").map((n: string) => parseInt(n || "0", 10));
           const gate = new Date(today);
           gate.setHours(hh || 0, mm || 0, 0, 0);
           if (today < gate) continue;
@@ -76,9 +77,9 @@ export async function POST(req: Request) {
           });
           if (already) continue;
 
-          const subject = `Erinnerung: ${r.type} – ${r.employee?.lastName ?? ""}, ${r.employee?.firstName ?? ""} – ${formatDate(due)}`;
+          const subject = `Erinnerung: ${r.typeLegacy} – ${r.employee?.lastName ?? ""}, ${r.employee?.firstName ?? ""} – ${formatDate(due)}`;
           const html = `
-            <p><strong>Erinnerung:</strong> ${r.type}</p>
+            <p><strong>Erinnerung:</strong> ${r.typeLegacy}</p>
             ${r.description ? `<p>${r.description}</p>` : ""}
             <p><strong>Berechtigter:</strong> ${r.employee?.lastName ?? ""}, ${r.employee?.firstName ?? ""}</p>
             <p><strong>Fälligkeit:</strong> ${formatDate(due)}</p>
