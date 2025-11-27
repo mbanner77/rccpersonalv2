@@ -494,9 +494,10 @@ model ReminderType {
 
 model Reminder {
   id            String        @id @default(cuid())
-  reminderType  ReminderType  @relation(fields: [reminderTypeId], references: [id])
-  reminderTypeId String
-  // Legacy field for migration (to be removed after migration)
+  // Optional until all existing records are migrated
+  reminderType  ReminderType? @relation(fields: [reminderTypeId], references: [id])
+  reminderTypeId String?
+  // Legacy field - maps to existing "type" column
   typeLegacy    ReminderTypeLegacy? @map("type")
   description   String?
   employee    Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
