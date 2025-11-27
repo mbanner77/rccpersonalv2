@@ -500,12 +500,29 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const createForm = showCreate ? (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-      <input className="border rounded p-2" placeholder="Name" value={newUnit.name} onChange={(e) => setNewUnit((prev) => ({ ...prev, name: e.target.value }))} />
-      <input className="border rounded p-2" placeholder="Leitung" value={newUnit.leader} onChange={(e) => setNewUnit((prev) => ({ ...prev, leader: e.target.value }))} />
-      <input className="border rounded p-2" placeholder="Stellvertretung" value={newUnit.deputy} onChange={(e) => setNewUnit((prev) => ({ ...prev, deputy: e.target.value }))} />
-      <div className="flex items-center gap-2">
-        <button onClick={createUnit} className="border rounded px-3 py-2 disabled:opacity-50" disabled={creating || newUnit.name.trim() === "" || units.some((u) => u.name.trim().toLowerCase() === newUnit.name.trim().toLowerCase())}>Anlegen</button>
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+      <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+        Neue Unit anlegen
+      </h4>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Name *</label>
+          <input className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" placeholder="z.B. Marketing" value={newUnit.name} onChange={(e) => setNewUnit((prev) => ({ ...prev, name: e.target.value }))} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Leitung</label>
+          <input className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" placeholder="Name" value={newUnit.leader} onChange={(e) => setNewUnit((prev) => ({ ...prev, leader: e.target.value }))} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Stellvertretung</label>
+          <input className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" placeholder="Name" value={newUnit.deputy} onChange={(e) => setNewUnit((prev) => ({ ...prev, deputy: e.target.value }))} />
+        </div>
+        <div className="flex items-end">
+          <button onClick={createUnit} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50" disabled={creating || newUnit.name.trim() === "" || units.some((u) => u.name.trim().toLowerCase() === newUnit.name.trim().toLowerCase())}>
+            {creating ? "Anlegen…" : "Anlegen"}
+          </button>
+        </div>
       </div>
     </div>
   ) : null;
@@ -513,70 +530,136 @@ function UnitDialog({ units, onClose, onRefresh }: { units: Unit[]; onClose: () 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
       <div className="w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-800">
-        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
-          <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Units verwalten</h3>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-zinc-200 bg-gradient-to-r from-zinc-50 to-white px-6 py-4 dark:border-zinc-700 dark:from-zinc-800 dark:to-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30">
+              <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Units verwalten</h3>
+              <p className="text-xs text-zinc-500">Organisationseinheiten erstellen und bearbeiten</p>
+            </div>
+          </div>
           <button onClick={onClose} className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <div className="p-0 overflow-y-auto">
-          <div className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur border-b">
-            <div className="p-3 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <input className="border rounded p-2 flex-1 min-w-[220px]" placeholder="Suche (Name)" value={filter} onChange={(e) => setFilter(e.target.value)} />
-                <button onClick={() => setShowCreate((v) => !v)} className="border rounded px-3 py-2">
-                  {showCreate ? "Abbrechen" : "Neue Unit"}
-                </button>
-                <div className="text-xs text-zinc-500 whitespace-nowrap">{localUnits.length} Units</div>
-              </div>
-              {createForm}
+
+        {/* Toolbar */}
+        <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 px-6 py-3 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/95">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-10 pr-4 text-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" placeholder="Units durchsuchen…" value={filter} onChange={(e) => setFilter(e.target.value)} />
             </div>
+            <button onClick={() => setShowCreate((v) => !v)} className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${showCreate ? "border border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
+              {showCreate ? (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  Abbrechen
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  Neue Unit
+                </>
+              )}
+            </button>
+            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">{localUnits.length} Units</span>
           </div>
-          <div className="p-4 space-y-4">
-            {error && <div className="text-sm text-red-600">{error}</div>}
-            <div className="space-y-3">
-              {visibleUnits.length === 0 && <p className="text-sm text-zinc-600">Noch keine Units angelegt.</p>}
-              {visibleUnits.map((unit) => {
-                const original = units.find((x) => x.id === unit.id);
-                const isDirty = !original || original.name !== unit.name || (original.leader ?? "") !== (unit.leader ?? "") || (original.deputy ?? "") !== (unit.deputy ?? "");
-                const nameEmpty = unit.name.trim() === "";
-                const nameDuplicate = units.some((u) => u.id !== unit.id && u.name.trim().toLowerCase() === unit.name.trim().toLowerCase());
-                const disableSave = saving || nameEmpty || nameDuplicate || !isDirty;
-                return (
-                  <div key={unit.id} className="border rounded-lg p-3 space-y-2 bg-zinc-50 dark:bg-zinc-900">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium">{original?.name ?? unit.name}</div>
-                      <span className="text-xs px-2 py-0.5 rounded-full border bg-white dark:bg-zinc-800">{unit._count?.employees ?? "–"} Mitarbeitende</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <label className="text-xs text-zinc-500">Name
-                        <input className="border rounded p-2 w-full" value={unit.name} onChange={(e) => updateLocal(unit.id, { name: e.target.value })} />
-                      </label>
-                      <label className="text-xs text-zinc-500">Leitung
-                        <input className="border rounded p-2 w-full" value={unit.leader ?? ""} onChange={(e) => updateLocal(unit.id, { leader: e.target.value })} />
-                      </label>
-                      <label className="text-xs text-zinc-500">Stellvertretung
-                        <input className="border rounded p-2 w-full" value={unit.deputy ?? ""} onChange={(e) => updateLocal(unit.id, { deputy: e.target.value })} />
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-zinc-500">
-                      <div className="flex gap-2">
-                        {isDirty && (
-                          <button onClick={() => original && updateLocal(unit.id, { name: original.name, leader: original.leader ?? null, deputy: original.deputy ?? null })} className="border rounded px-3 py-1">Zurücksetzen</button>
-                        )}
-                      </div>
-                      <div className="flex gap-2 text-sm">
-                        <button onClick={() => saveUnit(unit)} className="border rounded px-3 py-1 disabled:opacity-50" disabled={disableSave}>Speichern</button>
-                        <button onClick={() => deleteUnit(unit.id)} className="border rounded px-3 py-1 text-red-600 disabled:opacity-50" disabled={saving}>Löschen</button>
-                      </div>
-                    </div>
-                    {(nameEmpty || nameDuplicate) && (
-                      <div className="text-xs text-red-600">{nameEmpty ? "Name darf nicht leer sein" : "Name existiert bereits"}</div>
-                    )}
-                  </div>
-                );
-              })}
+        </div>
+
+        {/* Content */}
+        <div className="max-h-[60vh] overflow-y-auto p-6">
+          {/* Error */}
+          {error && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {error}
             </div>
+          )}
+
+          {/* Create Form */}
+          {createForm && <div className="mb-6">{createForm}</div>}
+
+          {/* Unit Cards */}
+          <div className="space-y-4">
+            {visibleUnits.length === 0 && (
+              <div className="rounded-xl border-2 border-dashed border-zinc-200 py-12 text-center dark:border-zinc-700">
+                <svg className="mx-auto h-12 w-12 text-zinc-300 dark:text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                <p className="mt-2 text-sm text-zinc-500">Noch keine Units angelegt.</p>
+                <button onClick={() => setShowCreate(true)} className="mt-4 text-sm font-medium text-blue-600 hover:underline">Erste Unit erstellen</button>
+              </div>
+            )}
+            {visibleUnits.map((unit) => {
+              const original = units.find((x) => x.id === unit.id);
+              const isDirty = !original || original.name !== unit.name || (original.leader ?? "") !== (unit.leader ?? "") || (original.deputy ?? "") !== (unit.deputy ?? "");
+              const nameEmpty = unit.name.trim() === "";
+              const nameDuplicate = units.some((u) => u.id !== unit.id && u.name.trim().toLowerCase() === unit.name.trim().toLowerCase());
+              const disableSave = saving || nameEmpty || nameDuplicate || !isDirty;
+              return (
+                <div key={unit.id} className={`rounded-xl border p-4 transition ${isDirty ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/10" : "border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/50"}`}>
+                  {/* Unit Header */}
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
+                      </div>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">{original?.name ?? unit.name}</span>
+                      {isDirty && <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-800 dark:text-amber-200">Ungespeichert</span>}
+                    </div>
+                    <span className="rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">{unit._count?.employees ?? "–"} Mitarbeitende</span>
+                  </div>
+
+                  {/* Unit Fields */}
+                  <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Name</label>
+                      <input className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" value={unit.name} onChange={(e) => updateLocal(unit.id, { name: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Leitung</label>
+                      <input className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" value={unit.leader ?? ""} onChange={(e) => updateLocal(unit.id, { leader: e.target.value })} placeholder="Name eingeben" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Stellvertretung</label>
+                      <input className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white" value={unit.deputy ?? ""} onChange={(e) => updateLocal(unit.id, { deputy: e.target.value })} placeholder="Name eingeben" />
+                    </div>
+                  </div>
+
+                  {/* Validation Error */}
+                  {(nameEmpty || nameDuplicate) && (
+                    <div className="mb-3 flex items-center gap-2 text-xs text-red-600">
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {nameEmpty ? "Name darf nicht leer sein" : "Name existiert bereits"}
+                    </div>
+                  )}
+
+                  {/* Unit Actions */}
+                  <div className="flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                    <div>
+                      {isDirty && (
+                        <button onClick={() => original && updateLocal(unit.id, { name: original.name, leader: original.leader ?? null, deputy: original.deputy ?? null })} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700">
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                          Zurücksetzen
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => saveUnit(unit)} className="inline-flex items-center gap-1.5 rounded-lg bg-black px-4 py-1.5 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200" disabled={disableSave}>
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        Speichern
+                      </button>
+                      <button onClick={() => deleteUnit(unit.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400" disabled={saving}>
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        Löschen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
