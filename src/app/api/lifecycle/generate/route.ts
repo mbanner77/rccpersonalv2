@@ -16,22 +16,6 @@ function canGenerate(user: SessionUser) {
   return user.role === "ADMIN" || user.role === "HR" || user.role === "UNIT_LEAD";
 }
 
-// Map role keys to legacy UserRole enum values (for the DB column "ownerRole")
-const legacyOwnerRoleMap: Record<string, string> = {
-  ADMIN: "ADMIN",
-  HR: "HR",
-  IT: "IT",
-  UNIT_LEAD: "UNIT_LEAD",
-  TEAM_LEAD: "TEAM_LEAD",
-  PEOPLE_MANAGER: "PEOPLE_MANAGER",
-};
-
-// Map status keys to legacy TaskStatus enum values (for the DB column "status")
-const legacyStatusMap: Record<string, string> = {
-  OPEN: "OPEN",
-  DONE: "DONE",
-  BLOCKED: "BLOCKED",
-};
 
 export async function POST(req: Request) {
   const user = await requireUser();
@@ -77,17 +61,11 @@ export async function POST(req: Request) {
     });
   }
   const openStatusId = defaultStatus.id;
-  const legacyStatusValue = legacyStatusMap[defaultStatus.key] ?? "OPEN";
 
   let generatedCount = 0;
   for (const tpl of templates) {
     const due = new Date(anchorDate);
     due.setDate(due.getDate() + (tpl.relativeDueDays || 0));
-    
-    // Get legacy enum values
-    const roleKey = tpl.role?.key ?? "HR";
-    const legacyOwnerRoleValue = legacyOwnerRoleMap[roleKey] ?? "HR";
-    const id = `c${Date.now()}${Math.random().toString(36).substring(2, 9)}`;
 
     try {
       if (overwrite) {
@@ -98,38 +76,52 @@ export async function POST(req: Request) {
         });
         
         if (existing) {
-          // Update existing
-          await (db as any).$executeRawUnsafe(
-            `UPDATE "TaskAssignment" SET 
-              type = CAST($1 AS "TaskType"), 
-              "dueDate" = $2, 
-              "ownerRoleId" = $3,
-              "ownerRole" = CAST($4 AS "UserRole"),
-              "statusId" = $5,
-              status = CAST($6 AS "TaskStatus"),
-              "updatedAt" = NOW()
-            WHERE id = $7`,
-            type, due, tpl.ownerRoleId, legacyOwnerRoleValue, openStatusId, legacyStatusValue, existing.id
-          );
+          // Update existing - use Prisma instead of raw SQL to avoid legacy column issues
+          await (db as any)["taskAssignment"].update({
+            where: { id: existing.id },
+            data: {
+              type,
+              dueDate: due,
+              ownerRoleId: tpl.ownerRoleId,
+              statusId: openStatusId,
+            },
+          });
           generatedCount++;
         } else {
-          // Insert new
-          await (db as any).$executeRawUnsafe(
-            `INSERT INTO "TaskAssignment" (id, "employeeId", "taskTemplateId", type, "dueDate", "ownerRoleId", "ownerRole", "statusId", status, "createdAt", "updatedAt")
-             VALUES ($1, $2, $3, CAST($4 AS "TaskType"), $5, $6, CAST($7 AS "UserRole"), $8, CAST($9 AS "TaskStatus"), NOW(), NOW())`,
-            id, employeeId, tpl.id, type, due, tpl.ownerRoleId, legacyOwnerRoleValue, openStatusId, legacyStatusValue
-          );
+          // Insert new - use Prisma to handle column mapping properly
+          await (db as any)["taskAssignment"].create({
+            data: {
+              employeeId,
+              taskTemplateId: tpl.id,
+              type,
+              dueDate: due,
+              ownerRoleId: tpl.ownerRoleId,
+              statusId: openStatusId,
+            },
+          });
           generatedCount++;
         }
       } else {
-        // Create if not exists, ignore on conflict
-        await (db as any).$executeRawUnsafe(
-          `INSERT INTO "TaskAssignment" (id, "employeeId", "taskTemplateId", type, "dueDate", "ownerRoleId", "ownerRole", "statusId", status, "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, CAST($4 AS "TaskType"), $5, $6, CAST($7 AS "UserRole"), $8, CAST($9 AS "TaskStatus"), NOW(), NOW())
-           ON CONFLICT ("employeeId", "taskTemplateId") DO NOTHING`,
-          id, employeeId, tpl.id, type, due, tpl.ownerRoleId, legacyOwnerRoleValue, openStatusId, legacyStatusValue
-        );
-        generatedCount++;
+        // Create if not exists - use upsert to handle conflicts
+        try {
+          await (db as any)["taskAssignment"].create({
+            data: {
+              employeeId,
+              taskTemplateId: tpl.id,
+              type,
+              dueDate: due,
+              ownerRoleId: tpl.ownerRoleId,
+              statusId: openStatusId,
+            },
+          });
+          generatedCount++;
+        } catch (createErr: unknown) {
+          // Ignore unique constraint violations (task already exists)
+          const errorCode = (createErr as { code?: string })?.code;
+          if (errorCode !== 'P2002') {
+            throw createErr;
+          }
+        }
       }
     } catch (err) {
       console.error("Failed to generate task:", err);
