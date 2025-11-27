@@ -408,14 +408,28 @@ export default function LifecycleTasksPage({ taskType, title }: Props) {
             <button
               type="button"
               onClick={generateTasks}
-              disabled={!selectedEmployeeId || generating}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              disabled={!selectedEmployeeId || generating || availableTemplates.length === 0}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!selectedEmployeeId ? "Bitte wählen Sie zuerst einen Mitarbeiter aus" : availableTemplates.length === 0 ? "Keine Vorlagen verfügbar" : ""}
             >
               {generating ? "Generiere…" : "Aufgaben generieren"}
             </button>
           </div>
+          {/* Validation hints */}
+          {!selectedEmployeeId && employees.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              Bitte wählen Sie einen Mitarbeiter aus, um Aufgaben zu generieren.
+            </div>
+          )}
+          {availableTemplates.length === 0 && employees.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Keine aktiven {taskType === "ONBOARDING" ? "Onboarding" : "Offboarding"}-Vorlagen gefunden. Bitte erstellen Sie zuerst Vorlagen im Lifecycle-Admin-Bereich.
+            </div>
+          )}
           {generateResult && (
-            <div className="mt-3 rounded border border-emerald-300 bg-white px-3 py-2 text-sm text-emerald-800">
+            <div className={`mt-3 rounded border px-3 py-2 text-sm ${generateResult.includes("0 Aufgaben") || generateResult.toLowerCase().includes("fehler") ? "border-amber-300 bg-amber-50 text-amber-800" : "border-emerald-300 bg-emerald-50 text-emerald-800"}`}>
               {generateResult}
             </div>
           )}

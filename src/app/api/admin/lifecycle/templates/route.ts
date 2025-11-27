@@ -27,10 +27,16 @@ function ensureAdmin(user: SessionUser) {
   if (user.role !== "ADMIN") throw new Response("Forbidden", { status: 403 });
 }
 
+function canReadTemplates(user: SessionUser) {
+  return user.role === "ADMIN" || user.role === "HR" || user.role === "UNIT_LEAD";
+}
+
 export async function GET(req: Request) {
   try {
     const user = await requireUser();
-    ensureAdmin(user);
+    if (!canReadTemplates(user)) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     // Parse optional type filter from query params
     const url = new URL(req.url);
