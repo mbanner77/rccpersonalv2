@@ -44,16 +44,51 @@ export async function POST(req: Request) {
   if (templateId) {
     templateWhere.id = templateId;
   }
+  
+  console.log("[generate] Looking for templates with:", JSON.stringify(templateWhere));
+  
   const templates = await (db as any)["taskTemplate"].findMany({
     where: templateWhere,
     orderBy: { title: "asc" },
     select: { 
       id: true, 
+      title: true,
       relativeDueDays: true, 
       ownerRoleId: true,
+      type: true,
+      active: true,
       role: { select: { key: true } },
     },
   });
+  
+  console.log(`[generate] Found ${templates.length} templates:`, templates.map((t: { id: string; title: string; type: string; active: boolean }) => `${t.title} (${t.type}, active=${t.active})`));
+  
+  // If templateId was provided but no templates found, check why
+  if (templateId && templates.length === 0) {
+    const templateCheck = await (db as any)["taskTemplate"].findUnique({
+      where: { id: templateId },
+      select: { id: true, title: true, type: true, active: true },
+    });
+    if (templateCheck) {
+      const reasons: string[] = [];
+      if (templateCheck.type !== type) reasons.push(`Typ ist ${templateCheck.type}, nicht ${type}`);
+      if (!templateCheck.active) reasons.push("Vorlage ist nicht aktiv");
+      console.log(`[generate] Template ${templateId} exists but filtered out:`, reasons);
+      return Response.json({ 
+        error: `Vorlage "${templateCheck.title}" kann nicht verwendet werden: ${reasons.join(", ")}`,
+        generated: 0 
+      }, { status: 400 });
+    } else {
+      return Response.json({ error: "Vorlage nicht gefunden", generated: 0 }, { status: 404 });
+    }
+  }
+  
+  if (templates.length === 0) {
+    return Response.json({ 
+      error: `Keine aktiven ${type === "ONBOARDING" ? "Onboarding" : "Offboarding"}-Vorlagen gefunden`,
+      generated: 0 
+    }, { status: 400 });
+  }
 
   // Get the default "OPEN" status dynamically
   let defaultStatus = await (db as any)["lifecycleStatus"].findFirst({
