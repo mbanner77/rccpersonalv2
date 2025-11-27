@@ -34,10 +34,21 @@ export async function GET() {
     
     // Check if taskTemplate table exists
     try {
-      // Try with role include first
+      // Try with role include first (using select to exclude legacy ownerRole field)
       const templates = await (db as any)["taskTemplate"].findMany({
         orderBy: [{ type: "asc" }, { title: "asc" }],
-        include: { role: { select: { id: true, key: true, label: true } } },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          type: true,
+          ownerRoleId: true,
+          relativeDueDays: true,
+          active: true,
+          createdAt: true,
+          updatedAt: true,
+          role: { select: { id: true, key: true, label: true } },
+        },
       });
       // Transform to rename 'role' to 'ownerRole' for frontend compatibility
       const transformed = templates.map((t: Record<string, unknown>) => {
@@ -50,6 +61,17 @@ export async function GET() {
       try {
         const templates = await (db as any)["taskTemplate"].findMany({
           orderBy: [{ type: "asc" }, { title: "asc" }],
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            type: true,
+            ownerRoleId: true,
+            relativeDueDays: true,
+            active: true,
+            createdAt: true,
+            updatedAt: true,
+          },
         });
         // Add placeholder ownerRole for templates without relation
         const transformed = templates.map((t: Record<string, unknown>) => ({
@@ -111,10 +133,21 @@ export async function POST(req: Request) {
       data.active
     );
     
-    // Fetch the created record with relations
+    // Fetch the created record with relations (excluding legacy ownerRole field)
     const created = await (db as any)["taskTemplate"].findUnique({
       where: { id },
-      include: { role: { select: { id: true, key: true, label: true } } },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        type: true,
+        ownerRoleId: true,
+        relativeDueDays: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        role: { select: { id: true, key: true, label: true } },
+      },
     });
     
     if (!created) {
@@ -141,7 +174,18 @@ export async function PATCH(req: Request) {
     const updated = await (db as any)["taskTemplate"].update({
       where: { id },
       data: rest,
-      include: { role: { select: { id: true, key: true, label: true } } },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        type: true,
+        ownerRoleId: true,
+        relativeDueDays: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        role: { select: { id: true, key: true, label: true } },
+      },
     });
     // Transform to rename 'role' to 'ownerRole' for frontend compatibility
     const { role, ...updatedRest } = updated as Record<string, unknown>;
