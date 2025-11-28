@@ -136,6 +136,7 @@ model Employee {
   accesses           Access[]             @relation("EmployeeAccesses")
   documents          EmployeeDocument[]
   reminders          Reminder[]
+  certificates       WorkCertificate[]
   lockAll            Boolean              @default(false)
   lockFirstName      Boolean              @default(false)
   lockLastName       Boolean              @default(false)
@@ -320,6 +321,8 @@ model User {
   absencesApproved        Absence[]          @relation("AbsenceApprovedBy")
   documentsUploaded       EmployeeDocument[] @relation("EmployeeDocumentUploadedBy")
   completedLifecycleTasks LifecycleTask[]    @relation("LifecycleTaskCompletedBy")
+  certificatesCreated     WorkCertificate[]  @relation("CertificateCreatedBy")
+  certificatesApproved    WorkCertificate[]  @relation("CertificateApprovedBy")
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
 }
@@ -544,4 +547,99 @@ model ReminderSendLog {
 
   @@index([reminderId, sentAt])
   @@unique([reminderId, scheduleLabel, targetEmail, sentAt])
+}
+
+// --- Arbeitszeugnisse (Work Certificates) ---
+
+enum CertificateType {
+  ZWISCHENZEUGNIS  // Interim certificate
+  ENDZEUGNIS       // Final certificate
+  EINFACH          // Simple certificate (just dates, no evaluation)
+  QUALIFIZIERT     // Qualified certificate (with evaluation)
+}
+
+// Categories for text blocks
+model CertificateCategory {
+  id          String               @id @default(cuid())
+  key         String               @unique  // e.g. "INTRO", "TASKS", "PERFORMANCE", "BEHAVIOR", "CLOSING"
+  label       String                        // e.g. "Einleitung", "Tätigkeitsbeschreibung"
+  description String?
+  orderIndex  Int                  @default(0)
+  textBlocks  CertificateTextBlock[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+// Text block templates with rating levels (1=sehr gut to 5=mangelhaft)
+model CertificateTextBlock {
+  id          String              @id @default(cuid())
+  category    CertificateCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+  title       String                        // Short description of this block
+  content     String              @db.Text  // The actual text with placeholders like {firstName}, {lastName}, {jobTitle}
+  rating      Int                 @default(2) // 1=sehr gut, 2=gut, 3=befriedigend, 4=ausreichend, 5=mangelhaft
+  isDefault   Boolean             @default(false) // Use as default for this category/rating
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  sections    WorkCertificateSection[]
+
+  @@index([categoryId, rating])
+}
+
+// Generated work certificates
+model WorkCertificate {
+  id            String                   @id @default(cuid())
+  employee      Employee                 @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId    String
+  type          CertificateType          @default(QUALIFIZIERT)
+  title         String?                  // Custom title or auto-generated
+  issueDate     DateTime                 @default(now())
+  status        CertificateStatus        @default(DRAFT)
+  // Snapshot of employee data at generation time
+  employeeName  String                   // Full name at time of generation
+  jobTitle      String?                  // Job title at time of generation
+  startDate     DateTime                 // Employment start date
+  endDate       DateTime?                // Employment end date (null for interim)
+  // Final generated content
+  fullContent   String?         @db.Text // Complete generated text
+  notes         String?                  // Internal notes
+  createdBy     User?                    @relation("CertificateCreatedBy", fields: [createdById], references: [id])
+  createdById   String?
+  approvedBy    User?                    @relation("CertificateApprovedBy", fields: [approvedById], references: [id])
+  approvedById  String?
+  approvedAt    DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  sections      WorkCertificateSection[]
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+enum CertificateStatus {
+  DRAFT         // Being edited
+  REVIEW        // Ready for review
+  APPROVED      // Approved, ready to issue
+  ISSUED        // Issued to employee
+  ARCHIVED      // Archived
+}
+
+// Individual sections of a generated certificate
+model WorkCertificateSection {
+  id             String              @id @default(cuid())
+  certificate    WorkCertificate     @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  certificateId  String
+  textBlock      CertificateTextBlock? @relation(fields: [textBlockId], references: [id])
+  textBlockId    String?
+  categoryKey    String              // Category key for ordering
+  orderIndex     Int                 @default(0)
+  content        String              @db.Text  // Actual content (may be edited from template)
+  rating         Int?                // Rating used for this section
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([certificateId])
 }
