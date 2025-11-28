@@ -41,10 +41,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}
       >
-        <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-black">
+        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm supports-[backdrop-filter]:bg-white/80 dark:bg-zinc-950/95 dark:supports-[backdrop-filter]:bg-zinc-950/80">
           <AppHeader />
         </header>
-        <main className="mx-auto max-w-5xl p-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{children}</main>
       </body>
     </html>
   );
