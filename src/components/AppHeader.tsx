@@ -63,7 +63,7 @@ export default function AppHeader() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center shrink-0">
             <Image
               src="https://realcore.info/bilder/rc-logo.png"
               alt="realcore"
@@ -72,9 +72,6 @@ export default function AppHeader() {
               unoptimized
               className="h-7 w-auto object-contain"
             />
-            <span className="hidden sm:inline text-sm font-semibold text-zinc-500 dark:text-zinc-400 border-l border-zinc-300 dark:border-zinc-600 pl-2 ml-1">
-              HR-Modul
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
