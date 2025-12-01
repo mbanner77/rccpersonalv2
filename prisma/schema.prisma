@@ -906,6 +906,21 @@ model VehicleCost {
 
 // --- HR Tickets ---
 
+// LEGACY: Keep for backwards compatibility during migration
+enum HRTicketCategory {
+  BONUS           // Bonusabrechnung
+  SALARY          // Gehaltsabrechnung
+  ADDRESS_CHANGE  // Adressänderung
+  BANK_CHANGE     // Bankverbindung ändern
+  CONTRACT        // Vertragsfragen
+  VACATION        // Urlaubsfragen
+  SICK_LEAVE      // Krankmeldung
+  ONBOARDING      // Onboarding-Fragen
+  OFFBOARDING     // Offboarding-Fragen
+  CERTIFICATE     // Zeugnisse
+  OTHER           // Sonstiges
+}
+
 // Configurable ticket categories
 model TicketCategory {
   id          String     @id @default(cuid())
@@ -937,29 +952,30 @@ enum HRTicketStatus {
 }
 
 model HRTicket {
-  id            String            @id @default(cuid())
-  ticketNumber  String            @unique  // HR-2024-0001
-  title         String
-  description   String            @db.Text
-  category      TicketCategory?   @relation(fields: [categoryId], references: [id])
-  categoryId    String?           // Optional for migration, will be set by default
-  legacyCategory String?          // Store old enum value during migration
-  priority      HRTicketPriority  @default(MEDIUM)
-  status        HRTicketStatus    @default(OPEN)
-  employee      Employee?         @relation(fields: [employeeId], references: [id])
-  employeeId    String?           // Optional: which employee is affected
-  createdBy     User              @relation("TicketCreatedBy", fields: [createdById], references: [id])
-  createdById   String
-  assignedTo    User?             @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
-  assignedToId  String?
-  resolvedAt    DateTime?
-  closedAt      DateTime?
-  comments      HRTicketComment[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id                String            @id @default(cuid())
+  ticketNumber      String            @unique  // HR-2024-0001
+  title             String
+  description       String            @db.Text
+  legacyCategory    HRTicketCategory  @default(OTHER) // LEGACY: Keep for backwards compatibility
+  category          TicketCategory?   @relation(fields: [categoryId], references: [id])
+  categoryId        String?           // New category system
+  priority          HRTicketPriority  @default(MEDIUM)
+  status            HRTicketStatus    @default(OPEN)
+  employee          Employee?         @relation(fields: [employeeId], references: [id])
+  employeeId        String?           // Optional: which employee is affected
+  createdBy         User              @relation("TicketCreatedBy", fields: [createdById], references: [id])
+  createdById       String
+  assignedTo        User?             @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId      String?
+  resolvedAt        DateTime?
+  closedAt          DateTime?
+  comments          HRTicketComment[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   @@index([status])
   @@index([categoryId])
+  @@index([legacyCategory])
   @@index([createdById])
   @@index([assignedToId])
 }
@@ -980,6 +996,24 @@ model HRTicketComment {
 
 // --- Qualifikationen (Qualifications / Certifications) ---
 
+// LEGACY: Keep for backwards compatibility during migration
+enum QualificationType {
+  FIRST_AID           // Ersthelfer
+  FIRE_SAFETY         // Brandschutzhelfer
+  SAFETY_OFFICER      // Sicherheitsbeauftragter
+  DATA_PROTECTION     // Datenschutzbeauftragter
+  WORKS_COUNCIL       // Betriebsrat
+  APPRENTICE_TRAINER  // Ausbilder
+  FORKLIFT            // Staplerführerschein
+  CRANE               // Kranführerschein
+  HAZMAT              // Gefahrgut
+  ELECTRICAL          // Elektrofachkraft
+  LANGUAGE            // Sprachzertifikat
+  IT_CERTIFICATION    // IT-Zertifizierung
+  PROJECT_MGMT        // Projektmanagement (PMP, PRINCE2)
+  OTHER               // Sonstiges
+}
+
 // Configurable qualification categories/types
 model QualificationCategory {
   id              String          @id @default(cuid())
@@ -999,9 +1033,9 @@ model QualificationCategory {
 
 model Qualification {
   id              String                 @id @default(cuid())
+  type            QualificationType      @default(OTHER) // LEGACY: Keep for backwards compatibility
   category        QualificationCategory? @relation(fields: [categoryId], references: [id])
-  categoryId      String?                // Optional for migration
-  legacyType      String?                // Store old enum value during migration
+  categoryId      String?                // New category system
   name            String                 // e.g. "Ersthelfer Grundkurs"
   description     String?
   isCompanyWide   Boolean                @default(false)
@@ -1011,6 +1045,7 @@ model Qualification {
   employeeQuals   EmployeeQualification[]
 
   @@index([categoryId])
+  @@index([type])
 }
 
 model EmployeeQualification {
