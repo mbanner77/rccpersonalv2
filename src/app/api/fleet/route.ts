@@ -71,6 +71,42 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const includeInactive = searchParams.get("includeInactive") === "true";
+    const vehicleId = searchParams.get("vehicleId");
+    const includeCosts = searchParams.get("includeCosts") === "true";
+
+    // Get single vehicle with all costs
+    if (vehicleId && includeCosts) {
+      const vehicle = await db.vehicle.findUnique({
+        where: { id: vehicleId },
+        include: {
+          costs: {
+            orderBy: { date: "desc" },
+          },
+          assignments: {
+            where: { isActive: true },
+            include: {
+              employee: { select: { id: true, firstName: true, lastName: true } },
+            },
+          },
+        },
+      });
+
+      if (!vehicle) {
+        return Response.json({ error: "Fahrzeug nicht gefunden" }, { status: 404 });
+      }
+
+      const costsWithLabels = vehicle.costs.map((c) => ({
+        ...c,
+        typeLabel: COST_TYPE_LABELS[c.type] ?? c.type,
+      }));
+
+      return Response.json({
+        ...vehicle,
+        costs: costsWithLabels,
+        typeLabel: TYPE_LABELS[vehicle.type] ?? vehicle.type,
+        statusLabel: STATUS_LABELS[vehicle.status] ?? vehicle.status,
+      });
+    }
 
     const vehicles = await db.vehicle.findMany({
       where: includeInactive ? {} : { status: { not: "DECOMMISSIONED" } },
@@ -230,7 +266,7 @@ export async function POST(req: Request) {
   }
 }
 
-// DELETE - Remove vehicle or unassign
+// DELETE - Remove vehicle, unassign, or delete cost
 export async function DELETE(req: Request) {
   try {
     const user = await requireUser();
@@ -239,7 +275,15 @@ export async function DELETE(req: Request) {
     }
 
     const body = await req.json();
-    const { vehicleId, action } = body;
+    const { vehicleId, costId, action } = body;
+
+    // Delete a specific cost
+    if (action === "deleteCost" && costId) {
+      await db.vehicleCost.delete({
+        where: { id: costId },
+      });
+      return Response.json({ success: true });
+    }
 
     if (action === "unassign") {
       await db.vehicleAssignment.updateMany({

@@ -3,6 +3,17 @@
 import { useState, useEffect } from "react";
 import { useSession } from "@/hooks/useSession";
 
+type VehicleCost = {
+  id: string;
+  type: string;
+  typeLabel: string;
+  amount: number;
+  date: string;
+  description?: string;
+  mileage?: number;
+  createdAt: string;
+};
+
 type Vehicle = {
   id: string;
   licensePlate: string;
@@ -20,6 +31,8 @@ type Vehicle = {
   leasingMonthly?: number;
   leasingEnd?: string;
   totalCosts: number;
+  costs?: VehicleCost[];
+  costsByType?: Record<string, number>;
   currentAssignment?: {
     id: string;
     employee: { id: string; firstName: string; lastName: string; jobTitle?: string };
@@ -63,6 +76,9 @@ export default function FleetPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showAssign, setShowAssign] = useState<string | null>(null);
   const [showCost, setShowCost] = useState<string | null>(null);
+  const [showDetail, setShowDetail] = useState<Vehicle | null>(null);
+  const [detailCosts, setDetailCosts] = useState<VehicleCost[]>([]);
+  const [loadingCosts, setLoadingCosts] = useState(false);
 
   // Create form
   const [licensePlate, setLicensePlate] = useState("");
@@ -196,6 +212,37 @@ export default function FleetPage() {
     }
   }
 
+  async function loadVehicleCosts(vehicleId: string) {
+    setLoadingCosts(true);
+    try {
+      const res = await fetch(`/api/fleet?vehicleId=${vehicleId}&includeCosts=true`);
+      if (res.ok) {
+        const data = await res.json();
+        setDetailCosts(data.costs || []);
+      }
+    } finally {
+      setLoadingCosts(false);
+    }
+  }
+
+  async function openVehicleDetail(vehicle: Vehicle) {
+    setShowDetail(vehicle);
+    await loadVehicleCosts(vehicle.id);
+  }
+
+  async function deleteCost(costId: string) {
+    if (!confirm("Kosten wirklich löschen?")) return;
+    const res = await fetch("/api/fleet", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ costId, action: "deleteCost" }),
+    });
+    if (res.ok && showDetail) {
+      loadVehicleCosts(showDetail.id);
+      loadData();
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "AVAILABLE": return "bg-green-100 text-green-700";
@@ -204,6 +251,26 @@ export default function FleetPage() {
       default: return "bg-gray-100 text-gray-700";
     }
   };
+
+  const getCostTypeColor = (type: string) => {
+    switch (type) {
+      case "FUEL": return "bg-amber-100 text-amber-700";
+      case "LEASING": return "bg-blue-100 text-blue-700";
+      case "REPAIR": return "bg-red-100 text-red-700";
+      case "MAINTENANCE": return "bg-orange-100 text-orange-700";
+      case "INSURANCE": return "bg-purple-100 text-purple-700";
+      case "TAX": return "bg-slate-100 text-slate-700";
+      default: return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  // Calculate cost breakdown for detail view
+  const costsByType = detailCosts.reduce((acc, cost) => {
+    acc[cost.type] = (acc[cost.type] || 0) + Number(cost.amount);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalDetailCosts = Object.values(costsByType).reduce((sum, val) => sum + val, 0);
 
   // Stats
   const totalVehicles = vehicles.length;
@@ -301,12 +368,18 @@ export default function FleetPage() {
             </div>
 
             <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-700">
-              <div className="flex items-center justify-between text-sm">
+              <button
+                onClick={() => openVehicleDetail(vehicle)}
+                className="flex w-full items-center justify-between text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700/50 -mx-1 px-1 py-1 rounded transition"
+              >
                 <span className="text-zinc-500">Gesamtkosten:</span>
-                <span className="font-semibold text-zinc-900 dark:text-white">
+                <span className="flex items-center gap-1 font-semibold text-zinc-900 dark:text-white">
                   {Number(vehicle.totalCosts).toLocaleString("de-DE")} €
+                  <svg className="h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </span>
-              </div>
+              </button>
             </div>
 
             {isAdmin && (
@@ -571,6 +644,138 @@ export default function FleetPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle Detail / Cost History Modal */}
+      {showDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl bg-white dark:bg-zinc-800 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-700">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  {showDetail.licensePlate} - {showDetail.brand} {showDetail.model}
+                </h2>
+                <p className="text-sm text-zinc-500">Kostenübersicht</p>
+              </div>
+              <button
+                onClick={() => { setShowDetail(null); setDetailCosts([]); }}
+                className="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Cost Summary */}
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-700/50 border-b border-zinc-200 dark:border-zinc-700">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                    {totalDetailCosts.toLocaleString("de-DE")} €
+                  </p>
+                  <p className="text-xs text-zinc-500">Gesamtkosten</p>
+                </div>
+                {COST_TYPES.slice(0, 3).map((ct) => (
+                  <div key={ct.value} className="text-center">
+                    <p className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">
+                      {(costsByType[ct.value] || 0).toLocaleString("de-DE")} €
+                    </p>
+                    <p className="text-xs text-zinc-500">{ct.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Cost Breakdown by Type */}
+            {Object.keys(costsByType).length > 0 && (
+              <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+                <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Aufteilung nach Kostenart</h3>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(costsByType)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([type, amount]) => {
+                      const label = COST_TYPES.find((c) => c.value === type)?.label || type;
+                      const percent = totalDetailCosts > 0 ? Math.round((amount / totalDetailCosts) * 100) : 0;
+                      return (
+                        <div key={type} className={`rounded-lg px-3 py-1.5 text-sm ${getCostTypeColor(type)}`}>
+                          <span className="font-medium">{label}</span>
+                          <span className="ml-2">{amount.toLocaleString("de-DE")} € ({percent}%)</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Cost List */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Alle Kosten ({detailCosts.length})
+                </h3>
+                {isAdmin && (
+                  <button
+                    onClick={() => { setShowCost(showDetail.id); }}
+                    className="text-xs font-medium text-green-600 hover:text-green-700 flex items-center gap-1"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Kosten hinzufügen
+                  </button>
+                )}
+              </div>
+
+              {loadingCosts ? (
+                <div className="flex justify-center py-8">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+                </div>
+              ) : detailCosts.length === 0 ? (
+                <p className="text-center text-zinc-500 py-8">Keine Kosten erfasst</p>
+              ) : (
+                <div className="space-y-2">
+                  {detailCosts
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((cost) => (
+                      <div
+                        key={cost.id}
+                        className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-700/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`rounded-full px-2 py-1 text-xs font-medium ${getCostTypeColor(cost.type)}`}>
+                            {cost.typeLabel || COST_TYPES.find((c) => c.value === cost.type)?.label || cost.type}
+                          </span>
+                          <div>
+                            <p className="font-medium text-zinc-900 dark:text-white">
+                              {Number(cost.amount).toLocaleString("de-DE")} €
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                              {new Date(cost.date).toLocaleDateString("de-DE")}
+                              {cost.description && ` • ${cost.description}`}
+                              {cost.mileage && ` • ${cost.mileage.toLocaleString("de-DE")} km`}
+                            </p>
+                          </div>
+                        </div>
+                        {isAdmin && (
+                          <button
+                            onClick={() => deleteCost(cost.id)}
+                            className="rounded p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            title="Löschen"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
