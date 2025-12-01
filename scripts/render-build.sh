@@ -110,6 +110,10 @@ remove_patterns = [
     r'DROP\s+TYPE[^;]*"ReminderType"[^;]*;',
     r'ALTER\s+TYPE[^;]*"ReminderType"[^;]*;',
     r'DROP\s+INDEX[^;]*"TaskAssignment_employeeId_status_dueDate_idx"[^;]*;',
+    # Skip QualificationType enum operations (legacy)
+    r'DROP\s+TYPE[^;]*"QualificationType"[^;]*;',
+    # Skip HRTicketCategory enum operations (legacy)
+    r'DROP\s+TYPE[^;]*"HRTicketCategory"[^;]*;',
 ]
 for pat in remove_patterns:
     content = re.sub(pat, '', content, flags=re.IGNORECASE | re.DOTALL)
@@ -237,6 +241,10 @@ remove_patterns = [
     r'ALTER\s+TYPE[^;]*"ReminderType"[^;]*;',
     # Drop indexes on legacy columns we want to keep
     r'DROP\s+INDEX[^;]*"TaskAssignment_employeeId_status_dueDate_idx"[^;]*;',
+    # Skip QualificationType enum operations (legacy)
+    r'DROP\s+TYPE[^;]*"QualificationType"[^;]*;',
+    # Skip HRTicketCategory enum operations (legacy)
+    r'DROP\s+TYPE[^;]*"HRTicketCategory"[^;]*;',
 ]
 for pat in remove_patterns:
     content = re.sub(pat, '', content, flags=re.IGNORECASE | re.DOTALL)
@@ -250,6 +258,9 @@ def clean_alter_table(match):
         r'DROP\s+COLUMN\s+"status"',
         r'DROP\s+COLUMN\s+"ownerRole"',
         r'DROP\s+COLUMN\s+"type"',
+        r'DROP\s+COLUMN\s+"category"',
+        r'DROP\s+COLUMN\s+"legacyCategory"',
+        r'DROP\s+COLUMN\s+"legacyType"',
         r'ADD\s+COLUMN\s+"status"',
         r'ADD\s+COLUMN\s+"ownerRole"',
         r'ADD\s+COLUMN\s+"type"',
@@ -259,6 +270,8 @@ def clean_alter_table(match):
         r'ALTER\s+COLUMN\s+"status"',
         r'ALTER\s+COLUMN\s+"ownerRole"',
         r'ALTER\s+COLUMN\s+"type"',
+        r'ALTER\s+COLUMN\s+"category"',
+        r'ALTER\s+COLUMN\s+"legacyCategory"',
     ]
     # Extract just the operations part (after ALTER TABLE "name")
     ops_match = re.search(r'ALTER\s+TABLE\s+"[^"]+"\s*(.*);', block, re.DOTALL | re.IGNORECASE)
