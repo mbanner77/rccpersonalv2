@@ -1,8 +1,10 @@
 import { db } from "@/lib/prisma";
 import { requireUser, hasRole } from "@/lib/auth";
 
+type QualificationType = "FIRST_AID" | "FIRE_SAFETY" | "SAFETY_OFFICER" | "DATA_PROTECTION" | "WORKS_COUNCIL" | "APPRENTICE_TRAINER" | "FORKLIFT" | "CRANE" | "HAZMAT" | "ELECTRICAL" | "LANGUAGE" | "IT_CERTIFICATION" | "PROJECT_MGMT" | "OTHER";
+
 // Default qualifications to seed
-const DEFAULT_QUALIFICATIONS = [
+const DEFAULT_QUALIFICATIONS: { type: QualificationType; name: string; validityMonths: number | null }[] = [
   { type: "FIRST_AID", name: "Ersthelfer Grundkurs", validityMonths: 24 },
   { type: "FIRST_AID", name: "Ersthelfer Auffrischung", validityMonths: 24 },
   { type: "FIRE_SAFETY", name: "Brandschutzhelfer", validityMonths: 36 },
@@ -37,7 +39,7 @@ export async function POST() {
 
     for (const qual of DEFAULT_QUALIFICATIONS) {
       const existing = await db.qualification.findFirst({
-        where: { type: qual.type as string, name: qual.name },
+        where: { type: qual.type, name: qual.name },
       });
 
       if (existing) {
@@ -47,7 +49,7 @@ export async function POST() {
 
       await db.qualification.create({
         data: {
-          type: qual.type as string,
+          type: qual.type,
           name: qual.name,
           validityMonths: qual.validityMonths,
           isCompanyWide: ["FIRST_AID", "FIRE_SAFETY"].includes(qual.type),
