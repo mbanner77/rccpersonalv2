@@ -115,7 +115,7 @@ export default function CertificatesPage() {
         fetch("/api/employees"),
         fetch("/api/admin/certificates/categories"),
         fetch("/api/certificates"),
-        fetch("/api/settings"),
+        fetch("/api/certificates/settings"), // Use certificate-specific settings endpoint
       ]);
 
       if (empRes.ok) {
