@@ -14,6 +14,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow cron API endpoints (they have their own secret-based auth)
+  if (pathname.startsWith("/api/cron/")) {
+    return NextResponse.next();
+  }
+
   // Allow explicitly public paths
   if (PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.next();
