@@ -45,6 +45,16 @@ type Certificate = {
   }>;
 };
 
+type CertSettings = {
+  certCompanyName: string;
+  certCompanyStreet: string;
+  certCompanyCity: string;
+  certCompanyPhone: string;
+  certCompanyWebsite: string;
+  certCompanyLogo: string;
+  certCompanyIntro: string;
+};
+
 const CERTIFICATE_TYPES = [
   { value: "QUALIFIZIERT", label: "Qualifiziertes Zeugnis" },
   { value: "EINFACH", label: "Einfaches Zeugnis" },
@@ -72,6 +82,7 @@ export default function CertificatesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [certSettings, setCertSettings] = useState<CertSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -100,10 +111,11 @@ export default function CertificatesPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [empRes, catRes, certRes] = await Promise.all([
+      const [empRes, catRes, certRes, settingsRes] = await Promise.all([
         fetch("/api/employees"),
         fetch("/api/admin/certificates/categories"),
         fetch("/api/certificates"),
+        fetch("/api/settings"),
       ]);
 
       if (empRes.ok) {
@@ -117,6 +129,10 @@ export default function CertificatesPage() {
       if (certRes.ok) {
         const data = await certRes.json();
         setCertificates(Array.isArray(data) ? data : []);
+      }
+      if (settingsRes.ok) {
+        const data = await settingsRes.json();
+        setCertSettings(data);
       }
     } catch (e) {
       console.error("Failed to load data:", e);
@@ -541,12 +557,12 @@ export default function CertificatesPage() {
         </div>
       )}
 
-      {/* Preview Modal */}
+      {/* Preview Modal - PDF-like layout */}
       {previewCertificate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-auto p-4">
-          <div className="w-full max-w-4xl rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-800 max-h-[90vh] overflow-auto">
+          <div className="w-full max-w-4xl rounded-lg bg-zinc-100 dark:bg-zinc-900 p-6 shadow-xl max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Zeugnis-Vorschau</h2>
+              <h2 className="text-lg font-semibold">Zeugnis-Vorschau (entspricht PDF)</h2>
               <button
                 onClick={() => setPreviewCertificate(null)}
                 className="text-zinc-500 hover:text-zinc-700"
@@ -555,20 +571,85 @@ export default function CertificatesPage() {
               </button>
             </div>
             
-            <div className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-              <strong>{previewCertificate.employeeName}</strong> — {previewCertificate.typeLabel}
+            {/* PDF-like document */}
+            <div className="bg-white shadow-lg mx-auto" style={{ width: "210mm", minHeight: "297mm", padding: "40px 60px", fontFamily: "Georgia, serif" }}>
+              {/* Letterhead with logo and company info */}
+              <div className="flex justify-between items-start pb-4 mb-5 border-b-2 border-zinc-800">
+                {/* Logo */}
+                {certSettings?.certCompanyLogo && (
+                  <img 
+                    src={certSettings.certCompanyLogo} 
+                    alt="Logo" 
+                    className="h-10 object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
+                {/* Company Info */}
+                <div className="text-right text-xs text-zinc-600" style={{ lineHeight: 1.4 }}>
+                  <div className="font-bold text-sm text-zinc-800 mb-1">
+                    {certSettings?.certCompanyName || "Firma"}
+                  </div>
+                  {certSettings?.certCompanyStreet && <div>{certSettings.certCompanyStreet}</div>}
+                  {certSettings?.certCompanyCity && <div>{certSettings.certCompanyCity}</div>}
+                  {certSettings?.certCompanyPhone && <div>Tel: {certSettings.certCompanyPhone}</div>}
+                  {certSettings?.certCompanyWebsite && <div>{certSettings.certCompanyWebsite}</div>}
+                </div>
+              </div>
+              
+              {/* Confidential mark */}
+              <div className="text-right text-xs text-zinc-500 mb-6">Vertraulich</div>
+              
+              {/* Title */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold tracking-wide text-zinc-800">
+                  {previewCertificate.title || previewCertificate.typeLabel}
+                </h1>
+              </div>
+              
+              {/* Employee info box */}
+              <div className="bg-zinc-50 border border-zinc-200 rounded p-4 mb-8">
+                <div className="text-xs text-zinc-500 mb-1">Ausgestellt für</div>
+                <div className="text-lg font-semibold text-zinc-800">{previewCertificate.employeeName}</div>
+                {previewCertificate.jobTitle && (
+                  <div className="text-sm text-zinc-600">Position: {previewCertificate.jobTitle}</div>
+                )}
+                <div className="text-sm text-zinc-600">
+                  Beschäftigungszeitraum: {new Date(previewCertificate.startDate).toLocaleDateString("de-DE")} – {previewCertificate.endDate ? new Date(previewCertificate.endDate).toLocaleDateString("de-DE") : "heute"}
+                </div>
+              </div>
+              
+              {/* Content with company intro prepended */}
+              <div className="text-sm leading-relaxed text-zinc-700" style={{ lineHeight: 1.7 }}>
+                {/* Company intro paragraph */}
+                {certSettings?.certCompanyIntro && (
+                  <p className="mb-4 text-justify">{certSettings.certCompanyIntro}</p>
+                )}
+                {/* Certificate content paragraphs */}
+                {(previewCertificate.fullContent || "").split("\n\n").filter(Boolean).map((para, idx) => (
+                  <p key={idx} className="mb-4 text-justify">{para}</p>
+                ))}
+              </div>
+              
+              {/* Footer with date and signature */}
+              <div className="mt-16 pt-8">
+                <div className="flex justify-between">
+                  <div className="text-center">
+                    <div className="text-xs text-zinc-500 mb-2">Ort, Datum</div>
+                    <div className="border-b border-zinc-400 w-48 mb-1"></div>
+                    <div className="text-sm">{new Date(previewCertificate.issueDate).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="border-b border-zinc-400 w-48 mb-1"></div>
+                    <div className="text-xs text-zinc-500">Geschäftsführung / Personalabteilung</div>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div className="rounded border p-6 bg-white dark:bg-zinc-900 dark:border-zinc-700 mb-4">
-              <pre className="whitespace-pre-wrap font-serif text-base leading-relaxed">
-                {previewCertificate.fullContent || "Kein Inhalt generiert"}
-              </pre>
-            </div>
-            
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => copyToClipboard(previewCertificate.fullContent || "")}
-                className="rounded border px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                className="rounded border bg-white px-4 py-2 text-sm hover:bg-zinc-100"
               >
                 📋 Kopieren
               </button>
@@ -583,13 +664,13 @@ export default function CertificatesPage() {
                   openSectionEditor(previewCertificate);
                   setPreviewCertificate(null);
                 }}
-                className="rounded border px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                className="rounded border bg-white px-4 py-2 text-sm hover:bg-zinc-100"
               >
                 ✏️ Bearbeiten
               </button>
               <button
                 onClick={() => setPreviewCertificate(null)}
-                className="rounded bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90 dark:bg-white dark:text-black"
+                className="rounded bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90"
               >
                 Schließen
               </button>
