@@ -17,6 +17,14 @@ type SettingsDto = {
   sendOnBirthday: boolean;
   sendOnJubilee: boolean;
   dailySendHour: number;
+  // Certificate settings
+  certCompanyName: string;
+  certCompanyStreet: string;
+  certCompanyCity: string;
+  certCompanyPhone: string;
+  certCompanyWebsite: string;
+  certCompanyLogo: string;
+  certCompanyIntro: string;
 };
 
 type TestResult = {
@@ -202,6 +210,89 @@ export default function SettingsPage() {
                     value={data.jubileeEmailTemplate}
                     onChange={(e) => update("jubileeEmailTemplate", e.target.value)}
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Zeugnis-Einstellungen Card */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 dark:bg-teal-900/30">
+                  <svg className="h-5 w-5 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Zeugnis-Einstellungen</h2>
+                  <p className="text-xs text-zinc-500">Kopfbereich und Firmentext für Arbeitszeugnisse</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Firmenname</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm transition focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                      value={data.certCompanyName}
+                      onChange={(e) => update("certCompanyName", e.target.value)}
+                      placeholder="RealCore Consulting GmbH"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Straße / Hausnummer</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm transition focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                      value={data.certCompanyStreet}
+                      onChange={(e) => update("certCompanyStreet", e.target.value)}
+                      placeholder="Musterstraße 123"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">PLZ / Ort</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm transition focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                      value={data.certCompanyCity}
+                      onChange={(e) => update("certCompanyCity", e.target.value)}
+                      placeholder="12345 Musterstadt"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Telefon</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm transition focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                      value={data.certCompanyPhone}
+                      onChange={(e) => update("certCompanyPhone", e.target.value)}
+                      placeholder="+49 123 456789"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Website</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm transition focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                      value={data.certCompanyWebsite}
+                      onChange={(e) => update("certCompanyWebsite", e.target.value)}
+                      placeholder="www.realcore.de"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Logo-URL</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm transition focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                      value={data.certCompanyLogo}
+                      onChange={(e) => update("certCompanyLogo", e.target.value)}
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Firmenvorstellung (erscheint am Anfang des Zeugnisses)</label>
+                  <textarea
+                    className="h-32 w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm transition focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                    value={data.certCompanyIntro}
+                    onChange={(e) => update("certCompanyIntro", e.target.value)}
+                    placeholder="Kurzer Text über die Firma..."
+                  />
+                  <p className="mt-1 text-xs text-zinc-500">Dieser Text erscheint als erster Absatz im Arbeitszeugnis und beschreibt die Firma.</p>
                 </div>
               </div>
             </div>

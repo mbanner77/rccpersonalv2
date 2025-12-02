@@ -4,8 +4,27 @@ import { renderToBuffer, Document, Page, Text, View, StyleSheet, Image } from "@
 import React, { ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 
-// Company logo URL
-const COMPANY_LOGO = "https://realcore.info/bilder/rc-logo.png";
+// Certificate settings type
+type CertificateSettings = {
+  companyName: string;
+  companyStreet: string;
+  companyCity: string;
+  companyPhone: string;
+  companyWebsite: string;
+  companyLogo: string;
+  companyIntro: string;
+};
+
+// Default values
+const DEFAULT_CERT_SETTINGS: CertificateSettings = {
+  companyName: "RealCore Consulting GmbH",
+  companyStreet: "",
+  companyCity: "",
+  companyPhone: "",
+  companyWebsite: "",
+  companyLogo: "https://realcore.info/bilder/rc-logo.png",
+  companyIntro: "Die RealCore Consulting GmbH ist ein führendes Beratungsunternehmen im Bereich IT, mit einem besonderen Schwerpunkt auf der SAP-Technologie. Das Unternehmen unterstützt seine Kunden bei der Implementierung und Optimierung von SAP-Lösungen, um deren Geschäftsprozesse effizienter zu gestalten. Dabei legt RealCore besonderen Wert auf eine partnerschaftliche Zusammenarbeit und die Entwicklung maßgeschneiderter Lösungen, um den individuellen Anforderungen der Kunden gerecht zu werden. Ziel ist es, durch praxisorientierte Beratung und exzellente Expertise nachhaltige Erfolge und eine hohe Kundenzufriedenheit sicherzustellen.",
+};
 
 // PDF Styles - Professional German work certificate layout
 const styles = StyleSheet.create({
@@ -173,10 +192,12 @@ type CertificateData = {
   endDate: Date | null;
   issueDate: Date;
   fullContent: string | null;
+  settings: CertificateSettings;
 };
 
 // Helper to create the PDF document using React.createElement
 function createPdfDocument(certificate: CertificateData): ReactElement<DocumentProps> {
+  const settings = certificate.settings;
   const formatDate = (date: Date | null) => {
     if (!date) return "";
     return new Intl.DateTimeFormat("de-DE", {
@@ -203,7 +224,14 @@ function createPdfDocument(certificate: CertificateData): ReactElement<DocumentP
   };
 
   const docTitle = certificate.title || typeLabels[certificate.type] || "Arbeitszeugnis";
-  const paragraphs = (certificate.fullContent || "").split("\n\n").filter(Boolean);
+  
+  // Prepend company intro to content if available
+  const companyIntro = settings.companyIntro ? settings.companyIntro.trim() : "";
+  const mainContent = certificate.fullContent || "";
+  const fullText = companyIntro 
+    ? `${companyIntro}\n\n${mainContent}`
+    : mainContent;
+  const paragraphs = fullText.split("\n\n").filter(Boolean);
 
   // Calculate employment duration
   const startDate = new Date(certificate.startDate);
@@ -232,15 +260,15 @@ function createPdfDocument(certificate: CertificateData): ReactElement<DocumentP
       React.createElement(
         View,
         { style: styles.letterhead },
-        React.createElement(Image, { style: styles.logo, src: COMPANY_LOGO }),
+        settings.companyLogo ? React.createElement(Image, { style: styles.logo, src: settings.companyLogo }) : null,
         React.createElement(
           View,
           { style: styles.companyInfo },
-          React.createElement(Text, { style: styles.companyName }, "realcore GmbH"),
-          React.createElement(Text, null, "Musterstraße 123"),
-          React.createElement(Text, null, "12345 Musterstadt"),
-          React.createElement(Text, null, "Tel: +49 123 456789"),
-          React.createElement(Text, null, "www.realcore.de")
+          React.createElement(Text, { style: styles.companyName }, settings.companyName || ""),
+          settings.companyStreet ? React.createElement(Text, null, settings.companyStreet) : null,
+          settings.companyCity ? React.createElement(Text, null, settings.companyCity) : null,
+          settings.companyPhone ? React.createElement(Text, null, `Tel: ${settings.companyPhone}`) : null,
+          settings.companyWebsite ? React.createElement(Text, null, settings.companyWebsite) : null
         )
       ),
       // Title
@@ -316,21 +344,36 @@ export async function GET(
     
     const { id } = await params;
 
-    const certificate = await db.workCertificate.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        employeeName: true,
-        jobTitle: true,
-        startDate: true,
-        endDate: true,
-        issueDate: true,
-        fullContent: true,
-        status: true,
-      },
-    });
+    // Load certificate and settings in parallel
+    const [certificate, settings] = await Promise.all([
+      (db as unknown as { workCertificate: { findUnique: (args: { where: { id: string }; select: Record<string, boolean> }) => Promise<{
+        id: string;
+        title: string | null;
+        type: string;
+        employeeName: string;
+        jobTitle: string | null;
+        startDate: Date;
+        endDate: Date | null;
+        issueDate: Date;
+        fullContent: string | null;
+        status: string;
+      } | null> } }).workCertificate.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          employeeName: true,
+          jobTitle: true,
+          startDate: true,
+          endDate: true,
+          issueDate: true,
+          fullContent: true,
+          status: true,
+        },
+      }),
+      db.setting.findUnique({ where: { id: 1 } }),
+    ]);
 
     if (!certificate) {
       return Response.json({ error: "Zeugnis nicht gefunden" }, { status: 404 });
@@ -343,8 +386,28 @@ export async function GET(
       );
     }
 
+    // Build certificate settings from DB or use defaults
+    const certSettings = settings as typeof settings & {
+      certCompanyName?: string;
+      certCompanyStreet?: string;
+      certCompanyCity?: string;
+      certCompanyPhone?: string;
+      certCompanyWebsite?: string;
+      certCompanyLogo?: string;
+      certCompanyIntro?: string;
+    };
+    const certConfig: CertificateSettings = {
+      companyName: certSettings?.certCompanyName || DEFAULT_CERT_SETTINGS.companyName,
+      companyStreet: certSettings?.certCompanyStreet || DEFAULT_CERT_SETTINGS.companyStreet,
+      companyCity: certSettings?.certCompanyCity || DEFAULT_CERT_SETTINGS.companyCity,
+      companyPhone: certSettings?.certCompanyPhone || DEFAULT_CERT_SETTINGS.companyPhone,
+      companyWebsite: certSettings?.certCompanyWebsite || DEFAULT_CERT_SETTINGS.companyWebsite,
+      companyLogo: certSettings?.certCompanyLogo || DEFAULT_CERT_SETTINGS.companyLogo,
+      companyIntro: certSettings?.certCompanyIntro || DEFAULT_CERT_SETTINGS.companyIntro,
+    };
+
     // Generate PDF
-    const pdfDocument = createPdfDocument(certificate);
+    const pdfDocument = createPdfDocument({ ...certificate, settings: certConfig });
     const pdfBuffer = await renderToBuffer(pdfDocument);
 
     // Create filename

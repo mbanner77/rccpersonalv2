@@ -479,6 +479,14 @@ model Setting {
   sendOnBirthday         Boolean @default(true)
   sendOnJubilee          Boolean @default(true)
   dailySendHour          Int     @default(8) // 0-23
+  // Certificate (Zeugnis) settings
+  certCompanyName        String  @default("RealCore Consulting GmbH")
+  certCompanyStreet      String  @default("")
+  certCompanyCity        String  @default("")
+  certCompanyPhone       String  @default("")
+  certCompanyWebsite     String  @default("")
+  certCompanyLogo        String  @default("https://realcore.info/bilder/rc-logo.png")
+  certCompanyIntro       String  @default("Die RealCore Consulting GmbH ist ein führendes Beratungsunternehmen im Bereich IT, mit einem besonderen Schwerpunkt auf der SAP-Technologie. Das Unternehmen unterstützt seine Kunden bei der Implementierung und Optimierung von SAP-Lösungen, um deren Geschäftsprozesse effizienter zu gestalten. Dabei legt RealCore besonderen Wert auf eine partnerschaftliche Zusammenarbeit und die Entwicklung maßgeschneiderter Lösungen, um den individuellen Anforderungen der Kunden gerecht zu werden. Ziel ist es, durch praxisorientierte Beratung und exzellente Expertise nachhaltige Erfolge und eine hohe Kundenzufriedenheit sicherzustellen.") @db.Text
 }
 
 model EmployeeImportLog {

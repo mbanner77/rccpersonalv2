@@ -18,6 +18,14 @@ function defaultSettings() {
     sendOnBirthday: true,
     sendOnJubilee: true,
     dailySendHour: 8,
+    // Certificate settings
+    certCompanyName: "RealCore Consulting GmbH",
+    certCompanyStreet: "",
+    certCompanyCity: "",
+    certCompanyPhone: "",
+    certCompanyWebsite: "",
+    certCompanyLogo: "https://realcore.info/bilder/rc-logo.png",
+    certCompanyIntro: "Die RealCore Consulting GmbH ist ein führendes Beratungsunternehmen im Bereich IT, mit einem besonderen Schwerpunkt auf der SAP-Technologie. Das Unternehmen unterstützt seine Kunden bei der Implementierung und Optimierung von SAP-Lösungen, um deren Geschäftsprozesse effizienter zu gestalten. Dabei legt RealCore besonderen Wert auf eine partnerschaftliche Zusammenarbeit und die Entwicklung maßgeschneiderter Lösungen, um den individuellen Anforderungen der Kunden gerecht zu werden. Ziel ist es, durch praxisorientierte Beratung und exzellente Expertise nachhaltige Erfolge und eine hohe Kundenzufriedenheit sicherzustellen.",
   };
 }
 
@@ -42,6 +50,16 @@ export async function GET() {
       found = await db.setting.update({ where: { id: 1 }, data: patch });
     }
   }
+  // Handle potentially missing certificate fields for backwards compatibility
+  const certFields = found as typeof found & {
+    certCompanyName?: string;
+    certCompanyStreet?: string;
+    certCompanyCity?: string;
+    certCompanyPhone?: string;
+    certCompanyWebsite?: string;
+    certCompanyLogo?: string;
+    certCompanyIntro?: string;
+  };
   return Response.json({
     managerEmails: found.managerEmails,
     birthdayEmailTemplate: found.birthdayEmailTemplate,
@@ -57,6 +75,14 @@ export async function GET() {
     sendOnBirthday: found.sendOnBirthday,
     sendOnJubilee: found.sendOnJubilee,
     dailySendHour: found.dailySendHour,
+    // Certificate settings
+    certCompanyName: certFields.certCompanyName ?? defaults.certCompanyName,
+    certCompanyStreet: certFields.certCompanyStreet ?? defaults.certCompanyStreet,
+    certCompanyCity: certFields.certCompanyCity ?? defaults.certCompanyCity,
+    certCompanyPhone: certFields.certCompanyPhone ?? defaults.certCompanyPhone,
+    certCompanyWebsite: certFields.certCompanyWebsite ?? defaults.certCompanyWebsite,
+    certCompanyLogo: certFields.certCompanyLogo ?? defaults.certCompanyLogo,
+    certCompanyIntro: certFields.certCompanyIntro ?? defaults.certCompanyIntro,
   });
 }
 
@@ -82,6 +108,14 @@ export async function POST(req: Request) {
     sendOnBirthday: z.coerce.boolean().default(true),
     sendOnJubilee: z.coerce.boolean().default(true),
     dailySendHour: z.coerce.number().int().min(0).max(23).default(8),
+    // Certificate settings
+    certCompanyName: z.string().optional().transform((s) => s?.trim() ?? ""),
+    certCompanyStreet: z.string().optional().transform((s) => s?.trim() ?? ""),
+    certCompanyCity: z.string().optional().transform((s) => s?.trim() ?? ""),
+    certCompanyPhone: z.string().optional().transform((s) => s?.trim() ?? ""),
+    certCompanyWebsite: z.string().optional().transform((s) => s?.trim() ?? ""),
+    certCompanyLogo: z.string().optional().transform((s) => s?.trim() ?? ""),
+    certCompanyIntro: z.string().optional().transform((s) => s?.trim() ?? ""),
   });
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) {
