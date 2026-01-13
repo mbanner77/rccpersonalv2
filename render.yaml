@@ -54,5 +54,7 @@ services:
 
 databases:
   - name: rcpersonal-db
-    plan: starter
+    plan: free
     region: frankfurt
+    databaseName: rcpersonal
+    user: rcpersonal
