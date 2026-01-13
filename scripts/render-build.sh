@@ -122,9 +122,18 @@ for pat in remove_patterns:
 content = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', content, flags=re.IGNORECASE)
 content = re.sub(r',?\s*"reminderTypeId"\s+TEXT[^,)]*', '', content, flags=re.IGNORECASE)
 
+# Remove foreign key constraints referencing reminderTypeId
+content = re.sub(r'ALTER\s+TABLE[^;]*FOREIGN\s+KEY[^;]*"reminderTypeId"[^;]*;', '', content, flags=re.IGNORECASE | re.DOTALL)
+content = re.sub(r'ALTER\s+TABLE[^;]*ADD\s+CONSTRAINT[^;]*"reminderTypeId"[^;]*;', '', content, flags=re.IGNORECASE | re.DOTALL)
+# Also remove CREATE INDEX on reminderTypeId
+content = re.sub(r'CREATE\s+(UNIQUE\s+)?INDEX[^;]*"reminderTypeId"[^;]*;', '', content, flags=re.IGNORECASE | re.DOTALL)
+
 def clean_create_table_reminder(match):
     block = match.group(0)
     block = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', block, flags=re.IGNORECASE)
+    block = re.sub(r',?\s*"reminderTypeId"\s+TEXT[^,)]*', '', block, flags=re.IGNORECASE)
+    # Remove CONSTRAINT ... FOREIGN KEY ... reminderTypeId
+    block = re.sub(r',?\s*CONSTRAINT\s+"[^"]*"\s+FOREIGN\s+KEY[^)]*"reminderTypeId"[^)]*\)[^)]*\)', '', block, flags=re.IGNORECASE)
     return block
 
 content = re.sub(r'CREATE\s+TABLE\s+"Reminder"\s*\([^;]+\);', clean_create_table_reminder, content, flags=re.IGNORECASE | re.DOTALL)
@@ -265,12 +274,21 @@ for pat in remove_patterns:
 content = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', content, flags=re.IGNORECASE)
 content = re.sub(r',?\s*"reminderTypeId"\s+TEXT[^,)]*', '', content, flags=re.IGNORECASE)
 
+# Remove foreign key constraints referencing reminderTypeId
+content = re.sub(r'ALTER\s+TABLE[^;]*FOREIGN\s+KEY[^;]*"reminderTypeId"[^;]*;', '', content, flags=re.IGNORECASE | re.DOTALL)
+content = re.sub(r'ALTER\s+TABLE[^;]*ADD\s+CONSTRAINT[^;]*"reminderTypeId"[^;]*;', '', content, flags=re.IGNORECASE | re.DOTALL)
+# Also remove CREATE INDEX on reminderTypeId
+content = re.sub(r'CREATE\s+(UNIQUE\s+)?INDEX[^;]*"reminderTypeId"[^;]*;', '', content, flags=re.IGNORECASE | re.DOTALL)
+
 # Skip entire CREATE TABLE "Reminder" if it would fail due to missing enum
 # Instead, we'll remove the problematic column and let it be created without it
 def clean_create_table_reminder(match):
     block = match.group(0)
     # Remove the type column that uses ReminderType enum
     block = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', block, flags=re.IGNORECASE)
+    block = re.sub(r',?\s*"reminderTypeId"\s+TEXT[^,)]*', '', block, flags=re.IGNORECASE)
+    # Remove CONSTRAINT ... FOREIGN KEY ... reminderTypeId
+    block = re.sub(r',?\s*CONSTRAINT\s+"[^"]*"\s+FOREIGN\s+KEY[^)]*"reminderTypeId"[^)]*\)[^)]*\)', '', block, flags=re.IGNORECASE)
     return block
 
 content = re.sub(r'CREATE\s+TABLE\s+"Reminder"\s*\([^;]+\);', clean_create_table_reminder, content, flags=re.IGNORECASE | re.DOTALL)
