@@ -1,9 +1,3 @@
-envVarGroups:
-  - name: shared-secrets
-    envVars:
-      - key: CRON_SECRET
-        generateValue: true
-
 services:
   - type: web
     name: rcpersonal-web
@@ -14,8 +8,6 @@ services:
     buildCommand: ./scripts/render-build.sh
     startCommand: ./scripts/render-start.sh
     autoDeploy: true
-    envVarGroups:
-      - shared-secrets
     envVars:
       - key: NODE_ENV
         value: production
@@ -25,6 +17,8 @@ services:
         fromDatabase:
           name: rcpersonal-db
           property: connectionString
+      - key: CRON_SECRET
+        generateValue: true
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -40,18 +34,18 @@ services:
 
   - type: cron
     name: rcpersonal-cron
-    schedule: "0 8 * * *" # daily at 08:00 UTC (~09:00 CET)
+    schedule: "0 8 * * *"
     runtime: node
     plan: starter
     region: frankfurt
     repo: https://github.com/mbanner77/rccpersonalv2.git
     buildCommand: npm ci
     startCommand: node scripts/cron-runner.js
-    envVarGroups:
-      - shared-secrets
     envVars:
       - key: NODE_ENV
         value: production
+      - key: CRON_SECRET
+        generateValue: true
       - key: WEB_HOST
         fromService:
           name: rcpersonal-web
@@ -60,5 +54,5 @@ services:
 
 databases:
   - name: rcpersonal-db
-    plan: basic-256mb
+    plan: starter
     region: frankfurt
