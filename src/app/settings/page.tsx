@@ -58,6 +58,10 @@ export default function SettingsPage() {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [tableData, setTableData] = useState<{ columns: string[]; data: unknown[]; total: number } | null>(null);
   const [tableLoading, setTableLoading] = useState(false);
+  // Backup state
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [backupResult, setBackupResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -125,7 +129,59 @@ export default function SettingsPage() {
 
   function openDbAdmin() {
     setShowDbAdmin(true);
+    setBackupResult(null);
     loadDbTables();
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    setBackupResult(null);
+    try {
+      const res = await fetch("/api/admin/database/backup");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `backup-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setBackupResult({ ok: true, message: "Export erfolgreich heruntergeladen" });
+    } catch (err) {
+      setBackupResult({ ok: false, message: err instanceof Error ? err.message : "Export fehlgeschlagen" });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleImport(file: File) {
+    setImporting(true);
+    setBackupResult(null);
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const res = await fetch("/api/admin/database/backup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(json),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setBackupResult({ ok: true, message: result.message || "Import erfolgreich" });
+        loadDbTables();
+      } else {
+        setBackupResult({ ok: false, message: result.error || "Import fehlgeschlagen" });
+      }
+    } catch (err) {
+      setBackupResult({ ok: false, message: err instanceof Error ? err.message : "Import fehlgeschlagen" });
+    } finally {
+      setImporting(false);
+    }
   }
 
   return (
@@ -640,6 +696,47 @@ export default function SettingsPage() {
                       ))}
                     </div>
                   )}
+                  {/* Backup Section */}
+                  <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <h4 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Backup</h4>
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        disabled={exporting}
+                        onClick={handleExport}
+                        className="flex w-full items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        {exporting ? "Exportiere…" : "Export (JSON)"}
+                      </button>
+                      <label className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        {importing ? "Importiere…" : "Import (JSON)"}
+                        <input
+                          type="file"
+                          accept=".json"
+                          className="hidden"
+                          disabled={importing}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImport(file);
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {backupResult && (
+                      <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${backupResult.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400" : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"}`}>
+                        {backupResult.ok ? "✓" : "✗"} {backupResult.message}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

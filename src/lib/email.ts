@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { db } from "@/lib/prisma";
 
 type TransportInfo = {
   messageId?: string;
@@ -15,18 +16,24 @@ export function renderTemplate(template: string, vars: Record<string, string | n
 }
 
 export async function sendMail({ to, subject, html }: MailOptions) {
-  // Defaults (fallback) per Anforderung (Strato)
+  // Load SMTP settings from database (Setting table)
+  const s = await db.setting.findUnique({ where: { id: 1 } });
+  
+  // Defaults (fallback)
   const defaultHost = "smtp.strato.de";
   const defaultPort = 465;
   const defaultUser = "rccpersonal@futurestore.shop";
   const defaultPass = "";
   const defaultFrom = defaultUser;
 
-  const host = process.env.SMTP_HOST || defaultHost;
-  const port = Number(process.env.SMTP_PORT || defaultPort);
-  const user = process.env.SMTP_USER || defaultUser;
-  const pass = process.env.SMTP_PASS || defaultPass;
-  const from = process.env.SMTP_FROM || user || defaultFrom;
+  // Use database settings first, then env vars as fallback, then defaults
+  const host = s?.smtpHost || process.env.SMTP_HOST || defaultHost;
+  const port = Number(s?.smtpPort ?? process.env.SMTP_PORT ?? defaultPort);
+  const user = s?.smtpUser || process.env.SMTP_USER || defaultUser;
+  const pass = s?.smtpPass || process.env.SMTP_PASS || defaultPass;
+  const from = s?.smtpFrom || process.env.SMTP_FROM || user || defaultFrom;
+  const secure = typeof s?.smtpSecure === "boolean" ? s.smtpSecure : port === 465;
+  const rejectUnauthorized = typeof s?.smtpRejectUnauthorized === "boolean" ? s.smtpRejectUnauthorized : true;
 
   if (!host || !user || !pass || !from) {
     console.warn("SMTP not fully configured; skipping send.");
@@ -36,8 +43,9 @@ export async function sendMail({ to, subject, html }: MailOptions) {
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure,
     auth: { user, pass },
+    tls: { rejectUnauthorized },
   });
 
   const info: TransportInfo = await transporter.sendMail({ from, to, subject, html });
