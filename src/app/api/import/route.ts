@@ -69,6 +69,7 @@ function parseRow(obj: Record<string, unknown>): ParsedRow {
 
   const keyA = map["name, vorname"] ?? map["name vorname"];
   const keyLast = map["nachname"] ?? map["name"];
+  const keyFirst = map["vorname"];
   const keyStart = map["eintrittsdatum"] ?? map["eintritt"] ?? map["startdatum"];
   const keyBirth = map["geburtstag"] ?? map["geburtsdatum"];
   const keyEmail = map["email"] ?? map["e-mail"] ?? map["mail"];
@@ -76,6 +77,7 @@ function parseRow(obj: Record<string, unknown>): ParsedRow {
   let firstName: string | null = null;
   let lastName: string | null = null;
 
+  // First try combined "Name, Vorname" column
   if (keyA && obj[keyA]) {
     const raw = String(obj[keyA]);
     const parts = raw.split(",");
@@ -86,8 +88,12 @@ function parseRow(obj: Record<string, unknown>): ParsedRow {
       firstName = raw.trim();
     }
   }
+  // Then check for separate Vorname column
+  if (keyFirst && obj[keyFirst]) {
+    firstName = String(obj[keyFirst]).trim() || firstName;
+  }
+  // And separate Nachname column
   if (keyLast && obj[keyLast]) {
-    // Prefer explicit Nachname column if present
     lastName = String(obj[keyLast]).trim() || lastName;
   }
 
@@ -139,18 +145,15 @@ export async function POST(req: NextRequest) {
     });
     const touched = new Set<string>();
 
+    // Read all rows once (more reliable than batch range calculation)
+    const allRows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, {
+      raw: false,
+      defval: null,
+    });
+
     const batchSize = 300; // process in small chunks to reduce memory
-    for (let offset = 0; offset < totalRows; offset += batchSize) {
-      const endOffset = Math.min(offset + batchSize - 1, totalRows - 1);
-      const batchRange = {
-        s: { r: headerRow, c: range.s.c }, // include header in each batch so keys are preserved
-        e: { r: headerRow + 1 + endOffset, c: range.e.c },
-      };
-      const batchRows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, {
-        raw: false,
-        defval: null,
-        range: batchRange,
-      });
+    for (let offset = 0; offset < allRows.length; offset += batchSize) {
+      const batchRows = allRows.slice(offset, offset + batchSize);
 
       for (const r of batchRows) {
         const parsed = parseRow(r);

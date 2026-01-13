@@ -39,6 +39,10 @@ export default function EmployeesPage() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [unitsLoading, setUnitsLoading] = useState(false);
   const [unitDialogOpen, setUnitDialogOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({ firstName: "", lastName: "", email: "", startDate: "", birthDate: "", unitId: "" });
+  const [addError, setAddError] = useState("");
+  const [addBusy, setAddBusy] = useState(false);
   const pageSize = 10;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -136,6 +140,66 @@ export default function EmployeesPage() {
       if (!prev) return prev;
       return prev.map((it) => (it.id === id ? { ...it, [key]: value } : it));
     });
+  }
+
+  async function addEmployee() {
+    if (!newEmployee.firstName.trim() || !newEmployee.lastName.trim()) {
+      setAddError("Vorname und Nachname sind erforderlich");
+      return;
+    }
+    if (!newEmployee.birthDate) {
+      setAddError("Geburtsdatum ist erforderlich");
+      return;
+    }
+    setAddBusy(true);
+    setAddError("");
+    try {
+      const res = await fetch("/api/employees", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          firstName: newEmployee.firstName.trim(),
+          lastName: newEmployee.lastName.trim(),
+          email: newEmployee.email.trim() || null,
+          startDate: newEmployee.startDate || null,
+          birthDate: newEmployee.birthDate,
+          unitId: newEmployee.unitId || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAddError(data?.error ?? "Fehler beim Anlegen");
+      } else {
+        setNewEmployee({ firstName: "", lastName: "", email: "", startDate: "", birthDate: "", unitId: "" });
+        setShowAddForm(false);
+        setStatus("Mitarbeiter erfolgreich angelegt");
+        await load();
+      }
+    } catch {
+      setAddError("Unerwarteter Fehler beim Anlegen");
+    } finally {
+      setAddBusy(false);
+    }
+  }
+
+  async function deleteEmployee(id: string, name: string) {
+    if (!confirm(`Mitarbeiter "${name}" wirklich löschen?`)) return;
+    try {
+      const res = await fetch("/api/employees", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Fehler beim Löschen: ${data?.error ?? res.statusText}`);
+      } else {
+        setStatus("Mitarbeiter gelöscht");
+        await load();
+      }
+    } catch {
+      alert("Unerwarteter Fehler beim Löschen");
+    }
   }
 
   useEffect(() => {
@@ -264,6 +328,22 @@ export default function EmployeesPage() {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
             Units verwalten
           </button>
+          <button 
+            onClick={() => setShowAddForm((v) => !v)} 
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition ${showAddForm ? "border border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-600 dark:text-zinc-200" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}
+          >
+            {showAddForm ? (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                Abbrechen
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Neuer Mitarbeiter
+              </>
+            )}
+          </button>
           <div className="flex-1" />
           <div className="relative min-w-[280px]">
             <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -277,6 +357,103 @@ export default function EmployeesPage() {
             />
           </div>
         </div>
+
+        {/* Add Employee Form */}
+        {showAddForm && (
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm dark:border-emerald-800 dark:bg-emerald-900/20">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-emerald-800 dark:text-emerald-300">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              Neuer Mitarbeiter
+            </h2>
+            {addError && (
+              <div className="mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {addError}
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Nachname *</label>
+                <input 
+                  className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" 
+                  value={newEmployee.lastName} 
+                  onChange={(e) => setNewEmployee((prev) => ({ ...prev, lastName: e.target.value }))} 
+                  placeholder="Nachname"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Vorname *</label>
+                <input 
+                  className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" 
+                  value={newEmployee.firstName} 
+                  onChange={(e) => setNewEmployee((prev) => ({ ...prev, firstName: e.target.value }))} 
+                  placeholder="Vorname"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Email</label>
+                <input 
+                  type="email"
+                  className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" 
+                  value={newEmployee.email} 
+                  onChange={(e) => setNewEmployee((prev) => ({ ...prev, email: e.target.value }))} 
+                  placeholder="wird automatisch generiert"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Eintritt</label>
+                <input 
+                  type="date"
+                  className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" 
+                  value={newEmployee.startDate} 
+                  onChange={(e) => setNewEmployee((prev) => ({ ...prev, startDate: e.target.value }))} 
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Geburtstag *</label>
+                <input 
+                  type="date"
+                  className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white" 
+                  value={newEmployee.birthDate} 
+                  onChange={(e) => setNewEmployee((prev) => ({ ...prev, birthDate: e.target.value }))} 
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-emerald-700 dark:text-emerald-400">Unit</label>
+                <select
+                  className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700 dark:bg-zinc-800 dark:text-white"
+                  value={newEmployee.unitId}
+                  onChange={(e) => setNewEmployee((prev) => ({ ...prev, unitId: e.target.value }))}
+                >
+                  <option value="">-- Keine --</option>
+                  {units.map((u) => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button 
+                onClick={addEmployee} 
+                disabled={addBusy || !newEmployee.firstName.trim() || !newEmployee.lastName.trim() || !newEmployee.birthDate}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {addBusy ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Anlegen...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Mitarbeiter anlegen
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Employee List */}
         {items && filtered && (
@@ -411,6 +588,13 @@ export default function EmployeesPage() {
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       Speichern
+                    </button>
+                    <button 
+                      onClick={() => deleteEmployee(it.id, `${it.firstName} ${it.lastName}`)} 
+                      className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 shadow-sm transition hover:bg-red-100 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      Löschen
                     </button>
                   </div>
                 </div>

@@ -160,6 +160,64 @@ export async function PATCH(req: Request) {
   }
 }
 
+export async function POST(req: Request) {
+  await requireAdmin();
+  const body = await req.json();
+  const firstName = String(body.firstName ?? "").trim();
+  const lastName = String(body.lastName ?? "").trim();
+  const email = body.email ? String(body.email).trim() : null;
+  const startDate = body.startDate ? new Date(body.startDate) : new Date();
+  const birthDate = body.birthDate ? new Date(body.birthDate) : null;
+
+  if (!firstName || !lastName) {
+    return Response.json({ error: "Vorname und Nachname sind erforderlich" }, { status: 400 });
+  }
+  if (!birthDate) {
+    return Response.json({ error: "Geburtsdatum ist erforderlich" }, { status: 400 });
+  }
+
+  // Check for duplicate
+  const existing = await db.employee.findUnique({
+    where: { firstName_lastName_birthDate: { firstName, lastName, birthDate } },
+  });
+  if (existing) {
+    return Response.json({ error: "Mitarbeiter existiert bereits (gleicher Name und Geburtsdatum)" }, { status: 400 });
+  }
+
+  // Generate email if not provided
+  function norm(s?: string | null) {
+    return (s ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .replace(/[^a-z\s-]/g, "")
+      .replace(/\s+/g, ".")
+      .replace(/-+/g, ".")
+      .replace(/\.+/g, ".")
+      .trim();
+  }
+  const autoEmail = email || (() => {
+    const fn = norm(firstName);
+    const ln = norm(lastName);
+    return fn && ln ? `${fn}.${ln}@realcore.de` : null;
+  })();
+
+  const created = await db.employee.create({
+    data: {
+      firstName,
+      lastName,
+      email: autoEmail,
+      startDate,
+      birthDate,
+      status: "ACTIVE",
+      unitId: body.unitId || null,
+    },
+    include: { unit: true },
+  });
+
+  return Response.json(created);
+}
+
 export async function DELETE(req: Request) {
   await requireAdmin();
   const { id } = await req.json();
