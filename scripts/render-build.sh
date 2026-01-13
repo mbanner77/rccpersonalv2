@@ -118,6 +118,17 @@ remove_patterns = [
 for pat in remove_patterns:
     content = re.sub(pat, '', content, flags=re.IGNORECASE | re.DOTALL)
 
+# Remove column definitions that reference ReminderType in CREATE TABLE statements
+content = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', content, flags=re.IGNORECASE)
+content = re.sub(r',?\s*"reminderTypeId"\s+TEXT[^,)]*', '', content, flags=re.IGNORECASE)
+
+def clean_create_table_reminder(match):
+    block = match.group(0)
+    block = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', block, flags=re.IGNORECASE)
+    return block
+
+content = re.sub(r'CREATE\s+TABLE\s+"Reminder"\s*\([^;]+\);', clean_create_table_reminder, content, flags=re.IGNORECASE | re.DOTALL)
+
 def clean_alter_table(match):
     block = match.group(0)
     skip_ops = [
@@ -248,6 +259,21 @@ remove_patterns = [
 ]
 for pat in remove_patterns:
     content = re.sub(pat, '', content, flags=re.IGNORECASE | re.DOTALL)
+
+# Remove column definitions that reference ReminderType in CREATE TABLE statements
+# This handles cases where the enum type was filtered but the column reference remains
+content = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', content, flags=re.IGNORECASE)
+content = re.sub(r',?\s*"reminderTypeId"\s+TEXT[^,)]*', '', content, flags=re.IGNORECASE)
+
+# Skip entire CREATE TABLE "Reminder" if it would fail due to missing enum
+# Instead, we'll remove the problematic column and let it be created without it
+def clean_create_table_reminder(match):
+    block = match.group(0)
+    # Remove the type column that uses ReminderType enum
+    block = re.sub(r',?\s*"type"\s+"ReminderType"[^,)]*', '', block, flags=re.IGNORECASE)
+    return block
+
+content = re.sub(r'CREATE\s+TABLE\s+"Reminder"\s*\([^;]+\);', clean_create_table_reminder, content, flags=re.IGNORECASE | re.DOTALL)
 
 # Remove ALTER TABLE blocks that only contain operations on legacy columns
 # Match ALTER TABLE ... ; blocks
