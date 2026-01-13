@@ -6,7 +6,7 @@ envVarGroups:
 
 services:
   - type: web
-    name: employee-anniversaries-web
+    name: rcpersonal-web
     runtime: node
     plan: starter
     region: frankfurt
@@ -23,7 +23,7 @@ services:
         value: "false"
       - key: DATABASE_URL
         fromDatabase:
-          name: employee-anniversaries-db
+          name: rcpersonal-db
           property: connectionString
       - key: SMTP_HOST
         sync: false
@@ -39,7 +39,7 @@ services:
         value: "manager1@example.com,manager2@example.com"
 
   - type: cron
-    name: employee-anniversaries-daily-cron
+    name: rcpersonal-cron
     schedule: "0 8 * * *" # daily at 08:00 UTC (~09:00 CET)
     runtime: node
     plan: starter
@@ -54,11 +54,11 @@ services:
         value: production
       - key: WEB_HOST
         fromService:
-          name: employee-anniversaries-web
+          name: rcpersonal-web
           type: web
           property: host
 
 databases:
-  - name: employee-anniversaries-db
+  - name: rcpersonal-db
     plan: basic-256mb
     region: frankfurt
