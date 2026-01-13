@@ -43,7 +43,7 @@ services:
     runtime: node
     plan: starter
     region: frankfurt
-    repo: https://github.com/mbanner77/rcpersonal.git
+    repo: https://github.com/mbanner77/rccpersonalv2.git
     buildCommand: npm ci
     startCommand: node scripts/cron-runner.js
     envVarGroups:
