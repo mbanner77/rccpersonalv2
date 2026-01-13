@@ -10,6 +10,7 @@ services:
     runtime: node
     plan: starter
     region: frankfurt
+    repo: https://github.com/mbanner77/rccpersonalv2.git
     buildCommand: ./scripts/render-build.sh
     startCommand: ./scripts/render-start.sh
     autoDeploy: true
