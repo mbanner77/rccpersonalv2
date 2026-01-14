@@ -25,18 +25,19 @@ export async function GET() {
   const lines: string[] = [];
   lines.push(header.join(","));
   for (const r of rows) {
+    const fmtBool = (b: boolean) => b ? "WAHR" : "FALSCH";
     const vals = [
       r.firstName,
       r.lastName,
       r.email ?? "",
       fmt(r.startDate),
       fmt(r.birthDate),
-      String(r.lockAll),
-      String(r.lockFirstName),
-      String(r.lockLastName),
-      String(r.lockStartDate),
-      String(r.lockBirthDate),
-      String(r.lockEmail),
+      fmtBool(r.lockAll),
+      fmtBool(r.lockFirstName),
+      fmtBool(r.lockLastName),
+      fmtBool(r.lockStartDate),
+      fmtBool(r.lockBirthDate),
+      fmtBool(r.lockEmail),
     ];
     const escaped = vals.map((v) =>
       /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v

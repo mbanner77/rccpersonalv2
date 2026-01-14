@@ -15,6 +15,10 @@ type Row = {
   lockEmail: boolean;
 };
 
+function formatBool(b: boolean): string {
+  return b ? "WAHR" : "FALSCH";
+}
+
 function toRow(r: Row) {
   return {
     firstName: r.firstName,
@@ -22,12 +26,12 @@ function toRow(r: Row) {
     email: r.email ?? "",
     startDate: new Date(r.startDate).toISOString().slice(0, 10),
     birthDate: new Date(r.birthDate).toISOString().slice(0, 10),
-    lockAll: r.lockAll,
-    lockFirstName: r.lockFirstName,
-    lockLastName: r.lockLastName,
-    lockStartDate: r.lockStartDate,
-    lockBirthDate: r.lockBirthDate,
-    lockEmail: r.lockEmail,
+    lockAll: formatBool(r.lockAll),
+    lockFirstName: formatBool(r.lockFirstName),
+    lockLastName: formatBool(r.lockLastName),
+    lockStartDate: formatBool(r.lockStartDate),
+    lockBirthDate: formatBool(r.lockBirthDate),
+    lockEmail: formatBool(r.lockEmail),
   };
 }
 

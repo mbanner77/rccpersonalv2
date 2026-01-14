@@ -265,7 +265,7 @@ export default function EmployeesPage() {
                 accept=".xlsx" 
                 className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:file:bg-zinc-600 dark:file:text-zinc-200" 
               />
-              <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Spalten: Nachname | Vorname | Email | Eintrittsdatum | Geburtstag</p>
+              <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Spalten: firstName | lastName | email | startDate | birthDate | lockAll | lockFirstName | lockLastName | lockStartDate | lockBirthDate | lockEmail</p>
             </div>
             <button 
               disabled={busy} 

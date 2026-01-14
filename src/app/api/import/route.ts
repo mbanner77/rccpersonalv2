@@ -10,7 +10,13 @@ type ParsedRow = {
   lastName: string | null;
   startDate: Date | null;
   birthDate: Date | null;
-  email?: string | null;
+  email: string | null;
+  lockAll: boolean;
+  lockFirstName: boolean;
+  lockLastName: boolean;
+  lockStartDate: boolean;
+  lockBirthDate: boolean;
+  lockEmail: boolean;
 };
 
 function normalizeHeader(h: unknown): string {
@@ -95,48 +101,44 @@ function parseDateFlexible(input: unknown): Date | null {
 
 // pick helper removed; build creates fully-typed Prisma inputs directly
 
+function parseBool(val: unknown): boolean {
+  if (val === true || val === false) return val;
+  const s = String(val ?? "").toLowerCase().trim();
+  return s === "true" || s === "wahr" || s === "1" || s === "ja" || s === "yes";
+}
+
 function parseRow(obj: Record<string, unknown>): ParsedRow {
+  // Build case-insensitive header map
   const map: Record<string, string> = {};
   for (const k of Object.keys(obj)) map[normalizeHeader(k)] = k;
 
-  const keyA = map["name, vorname"] ?? map["name vorname"];
-  const keyLast = map["nachname"] ?? map["name"];
-  const keyFirst = map["vorname"];
-  const keyStart = map["eintrittsdatum"] ?? map["eintritt"] ?? map["startdatum"];
-  const keyBirth = map["geburtstag"] ?? map["geburtsdatum"];
+  // New format: exact column names (case-insensitive)
+  const keyFirst = map["firstname"] ?? map["vorname"];
+  const keyLast = map["lastname"] ?? map["nachname"];
   const keyEmail = map["email"] ?? map["e-mail"] ?? map["mail"];
+  const keyStart = map["startdate"] ?? map["eintrittsdatum"] ?? map["eintritt"];
+  const keyBirth = map["birthdate"] ?? map["geburtstag"] ?? map["geburtsdatum"];
+  const keyLockAll = map["lockall"];
+  const keyLockFirstName = map["lockfirstname"];
+  const keyLockLastName = map["locklastname"];
+  const keyLockStartDate = map["lockstartdate"];
+  const keyLockBirthDate = map["lockbirthdate"];
+  const keyLockEmail = map["lockemail"];
 
-  let firstName: string | null = null;
-  let lastName: string | null = null;
+  const firstName = keyFirst ? String(obj[keyFirst] ?? "").trim() || null : null;
+  const lastName = keyLast ? String(obj[keyLast] ?? "").trim() || null : null;
+  const email = keyEmail ? String(obj[keyEmail] ?? "").trim() || null : null;
+  const startDate = keyStart ? parseDateFlexible(obj[keyStart]) : null;
+  const birthDate = keyBirth ? parseDateFlexible(obj[keyBirth]) : null;
+  
+  const lockAll = keyLockAll ? parseBool(obj[keyLockAll]) : false;
+  const lockFirstName = keyLockFirstName ? parseBool(obj[keyLockFirstName]) : false;
+  const lockLastName = keyLockLastName ? parseBool(obj[keyLockLastName]) : false;
+  const lockStartDate = keyLockStartDate ? parseBool(obj[keyLockStartDate]) : false;
+  const lockBirthDate = keyLockBirthDate ? parseBool(obj[keyLockBirthDate]) : false;
+  const lockEmail = keyLockEmail ? parseBool(obj[keyLockEmail]) : false;
 
-  // First try combined "Name, Vorname" column
-  if (keyA && obj[keyA]) {
-    const raw = String(obj[keyA]);
-    const parts = raw.split(",");
-    if (parts.length >= 2) {
-      lastName = parts[0]?.trim() || null;
-      firstName = parts.slice(1).join(",").trim() || null;
-    } else {
-      firstName = raw.trim();
-    }
-  }
-  // Then check for separate Vorname column
-  if (keyFirst && obj[keyFirst]) {
-    firstName = String(obj[keyFirst]).trim() || firstName;
-  }
-  // And separate Nachname column
-  if (keyLast && obj[keyLast]) {
-    lastName = String(obj[keyLast]).trim() || lastName;
-  }
-
-  const startVal = keyStart ? obj[keyStart as string] : undefined;
-  const birthVal = keyBirth ? obj[keyBirth as string] : undefined;
-  const emailVal = keyEmail ? obj[keyEmail as string] : undefined;
-  const startDate = keyStart ? parseDateFlexible(startVal) : null;
-  const birthDate = keyBirth ? parseDateFlexible(birthVal) : null;
-  const email = keyEmail ? String((emailVal ?? "")).trim() || null : null;
-
-  return { firstName, lastName, startDate, birthDate, email };
+  return { firstName, lastName, email, startDate, birthDate, lockAll, lockFirstName, lockLastName, lockStartDate, lockBirthDate, lockEmail };
 }
 
 export async function POST(req: NextRequest) {
@@ -194,7 +196,7 @@ export async function POST(req: NextRequest) {
 
       for (const r of batchRows) {
         const parsed = parseRow(r);
-        const { firstName, lastName, startDate, birthDate, email } = parsed;
+        const { firstName, lastName, startDate, birthDate, email, lockAll, lockFirstName, lockLastName, lockStartDate, lockBirthDate, lockEmail } = parsed;
         if (!firstName || !lastName || !birthDate) {
           skippedNoData++;
           // Debug: log why row was skipped
@@ -219,6 +221,12 @@ export async function POST(req: NextRequest) {
               ...(autoEmail !== undefined ? { email: autoEmail } : {}),
               status: "ACTIVE",
               exitDate: null,
+              lockAll,
+              lockFirstName,
+              lockLastName,
+              lockStartDate,
+              lockBirthDate,
+              lockEmail,
             },
           });
           touched.add(createdEmployee.id);
