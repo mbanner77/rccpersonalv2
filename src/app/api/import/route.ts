@@ -41,24 +41,56 @@ function buildEmail(firstName: string | null, lastName: string | null): string |
 }
 
 function parseDateFlexible(input: unknown): Date | null {
-  if (!input) return null;
+  if (input === null || input === undefined || input === "") return null;
+  
+  // Handle Excel serial date numbers (days since 1900-01-01, with Excel bug for 1900 leap year)
+  if (typeof input === "number" || (typeof input === "string" && /^\d+(\.\d+)?$/.test(input.trim()))) {
+    const serial = typeof input === "number" ? input : parseFloat(input);
+    if (serial > 1 && serial < 100000) {
+      // Excel epoch is 1900-01-01, but Excel incorrectly treats 1900 as a leap year
+      // So we need to subtract 1 for dates after Feb 28, 1900
+      const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+      const d = new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+  }
+  
   const s = String(input).trim();
-  // Excel may give ISO-like strings already
+  
+  // Handle dd.MM.yy or dd.MM.yyyy (German format)
+  const m = s.match(/^([0-3]?\d)\.([0-1]?\d)\.(\d{2}|\d{4})$/);
+  if (m) {
+    const [, ddStr, mmStr, yyStr] = m;
+    const dd = parseInt(ddStr!, 10);
+    const mm = parseInt(mmStr!, 10) - 1;
+    let yyyy = parseInt(yyStr!, 10);
+    if (yyStr!.length === 2) {
+      yyyy = yyyy < 50 ? 2000 + yyyy : 1900 + yyyy;
+    }
+    const d = new Date(yyyy, mm, dd);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  
+  // Handle dd/MM/yyyy or MM/dd/yyyy
+  const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (slashMatch) {
+    const [, p1, p2, p3] = slashMatch;
+    let yyyy = parseInt(p3!, 10);
+    if (p3!.length === 2) yyyy = yyyy < 50 ? 2000 + yyyy : 1900 + yyyy;
+    // Try dd/MM/yyyy first (European)
+    const dd = parseInt(p1!, 10);
+    const mm = parseInt(p2!, 10) - 1;
+    if (dd <= 31 && mm <= 11) {
+      const d = new Date(yyyy, mm, dd);
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+  }
+  
+  // Fallback: try ISO parsing
   const iso = Date.parse(s);
   if (!Number.isNaN(iso)) return new Date(iso);
-
-  // Handle dd.MM.yy or dd.MM.yyyy
-  const m = s.match(/^([0-3]?\d)\.([0-1]?\d)\.(\d{2}|\d{4})$/);
-  if (!m) return null;
-  const [, ddStr, mmStr, yyStr] = m;
-  const dd = parseInt(ddStr!, 10);
-  const mm = parseInt(mmStr!, 10) - 1;
-  let yyyy = parseInt(yyStr!, 10);
-  if (yyStr!.length === 2) {
-    yyyy = yyyy < 50 ? 2000 + yyyy : 1900 + yyyy;
-  }
-  const d = new Date(yyyy, mm, dd);
-  return Number.isNaN(d.getTime()) ? null : d;
+  
+  return null;
 }
 
 // pick helper removed; build creates fully-typed Prisma inputs directly
