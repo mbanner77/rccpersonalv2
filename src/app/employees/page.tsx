@@ -63,7 +63,7 @@ export default function EmployeesPage() {
       if (!res.ok) {
         setStatus(`Fehler: ${data?.error ?? res.statusText}`);
       } else {
-        setStatus(`Import: neu=${data.created}, aktualisiert=${data.updated}, übersprungen=${data.skippedLocked}`);
+        setStatus(`Import: neu=${data.created}, aktualisiert=${data.updated}, übersprungen=${data.skippedLocked}${data.skippedNoData ? `, ohne Daten=${data.skippedNoData}` : ""}${data.totalRows !== undefined ? ` (${data.totalRows} Zeilen gelesen)` : ""}`);
         await load();
       }
     } catch {

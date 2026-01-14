@@ -171,17 +171,22 @@ export async function POST(req: NextRequest) {
     let exited = 0;
     let skippedExitLocked = 0;
     let reactivated = 0;
+    let skippedNoData = 0;
 
     const allEmployees = await db.employee.findMany({
       select: { id: true, firstName: true, lastName: true, birthDate: true, lockAll: true, status: true },
     });
     const touched = new Set<string>();
 
-    // Read all rows once (more reliable than batch range calculation)
+    // Read all rows once - use raw: true to get original values including dates as numbers
     const allRows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, {
-      raw: false,
+      raw: true,
       defval: null,
     });
+
+    // Debug: log first row to understand structure
+    const debugFirstRow = allRows.length > 0 ? JSON.stringify(allRows[0]) : "no rows";
+    console.log("[import] totalRows:", allRows.length, "firstRow:", debugFirstRow);
 
     const batchSize = 300; // process in small chunks to reduce memory
     for (let offset = 0; offset < allRows.length; offset += batchSize) {
@@ -191,6 +196,11 @@ export async function POST(req: NextRequest) {
         const parsed = parseRow(r);
         const { firstName, lastName, startDate, birthDate, email } = parsed;
         if (!firstName || !lastName || !birthDate) {
+          skippedNoData++;
+          // Debug: log why row was skipped
+          if (skippedNoData <= 3) {
+            console.log("[import] skipped row - firstName:", firstName, "lastName:", lastName, "birthDate:", birthDate, "raw:", JSON.stringify(r));
+          }
           continue; // insufficient data
         }
 
@@ -299,7 +309,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return Response.json({ created, updated, skippedLocked, exited, skippedExitLocked, reactivated });
+    return Response.json({ created, updated, skippedLocked, exited, skippedExitLocked, reactivated, skippedNoData, totalRows: allRows.length });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unexpected error";
     return Response.json({ error: msg }, { status: 500 });
