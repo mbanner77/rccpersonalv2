@@ -7,14 +7,13 @@ log() { printf '[render-build] %s\n' "$1"; }
 log "Installing dependencies (npm ci)"
 npm ci
 
-log "Applying Prisma schema to database"
+log "Applying Prisma migrations to database"
 if [ -n "${DATABASE_URL:-}" ]; then
-  # Use db push to sync schema directly - simpler than migrations for new DBs
-  log "Running prisma db push --accept-data-loss"
-  npx prisma db push --accept-data-loss || {
-    log "db push failed, trying with --force-reset for completely fresh DB"
-    npx prisma db push --force-reset --accept-data-loss || {
-      log "db push --force-reset also failed. Aborting."
+  log "Running prisma migrate deploy"
+  npx prisma migrate deploy || {
+    log "migrate deploy failed, falling back to db push for fresh DB"
+    npx prisma db push --accept-data-loss || {
+      log "db push also failed. Aborting."
       exit 1
     }
   }
